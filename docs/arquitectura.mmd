@@ -1,0 +1,18 @@
+flowchart TD
+    Persona[Usuario u organizador] -->|HTTP local / HTTPS al publicar| Web[Interfaz web]
+    subgraph Monolito[Eventia: una aplicación]
+      Web --> HTTP[Controladores HTTP]
+      HTTP --> Usuarios
+      HTTP --> Eventos
+      HTTP --> Inscripciones
+      HTTP --> Notificaciones
+      Eventos -->|Identidad del organizador| Usuarios
+      Inscripciones -->|Validar identidad| Usuarios
+      Inscripciones -->|Reservar cupo| Eventos
+      Inscripciones -->|Registrar confirmación| Notificaciones
+      Usuarios --> Persistencia[Repositorios propios + unidad de trabajo]
+      Eventos --> Persistencia
+      Inscripciones --> Persistencia
+      Notificaciones --> Persistencia
+    end
+    Persistencia --> DB[(SQLite: base relacional única)]

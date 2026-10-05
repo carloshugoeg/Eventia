@@ -1,0 +1,6 @@
+data/
+tmp/
+node_modules/
+.env
+*.log
+.pdf

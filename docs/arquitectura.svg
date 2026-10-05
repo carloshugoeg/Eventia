@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 690" role="img" aria-labelledby="title desc">
+<title id="title">Arquitectura inicial de Eventia</title><desc id="desc">Una interfaz web y controladores HTTP en un monolito con módulos de Usuarios, Eventos, Inscripciones y Notificaciones; cada módulo usa repositorios propios en una base SQLite. Inscripciones depende de contratos de los otros tres módulos.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#427263"/></marker><style>text{font-family:Arial,sans-serif;fill:#19362f}.title{font-size:23px;font-weight:700}.label{font-size:18px;font-weight:700}.note{font-size:14px;fill:#5e7266}.line{fill:none;stroke:#427263;stroke-width:2;marker-end:url(#arrow)}.contract{fill:none;stroke:#bc7b45;stroke-width:2;stroke-dasharray:5 4;marker-end:url(#arrow)}</style></defs>
+<rect width="1000" height="690" rx="18" fill="#f7f7f0"/>
+<text x="40" y="43" class="title">Eventia · Arquitectura del MVP</text><text x="40" y="68" class="note">Monolito modular · un despliegue · una base relacional</text>
+<rect x="335" y="90" width="330" height="45" rx="8" fill="#e8eacb"/><text x="500" y="119" text-anchor="middle" class="label">Usuario / Organizador</text>
+<path d="M500 136V169" class="line"/><text x="518" y="157" class="note">HTTP local / HTTPS al publicar</text>
+<rect x="40" y="173" width="920" height="445" rx="14" fill="#fffef9" stroke="#c7d1c5"/><text x="62" y="201" class="note">UNA APLICACIÓN NODE.JS</text>
+<rect x="335" y="216" width="330" height="47" rx="8" fill="#dce7dd"/><text x="500" y="246" text-anchor="middle" class="label">Interfaz web</text>
+<path d="M500 264V285" class="line"/><text x="682" y="246" class="note">HTML · CSS · JavaScript</text>
+<rect x="335" y="290" width="330" height="47" rx="8" fill="#154f46"/><text x="500" y="320" text-anchor="middle" style="fill:#fff;font-size:18px;font-weight:700">Controladores HTTP / API JSON</text>
+<path d="M500 338V359H165V380M500 359H385V380M500 359H615V380M500 359H835V380" class="line"/>
+<g><rect x="65" y="385" width="200" height="69" rx="8" fill="#dce7dd"/><text x="165" y="413" text-anchor="middle" class="label">Usuarios</text><text x="165" y="436" text-anchor="middle" class="note">Identidad y sesiones</text></g>
+<g><rect x="285" y="385" width="200" height="69" rx="8" fill="#efd7c4"/><text x="385" y="413" text-anchor="middle" class="label">Eventos</text><text x="385" y="436" text-anchor="middle" class="note">Catálogo y cupos</text></g>
+<g><rect x="515" y="385" width="200" height="69" rx="8" fill="#dce1ed"/><text x="615" y="413" text-anchor="middle" class="label">Inscripciones</text><text x="615" y="436" text-anchor="middle" class="note">Coordina la reserva</text></g>
+<g><rect x="735" y="385" width="200" height="69" rx="8" fill="#e8dbde"/><text x="835" y="413" text-anchor="middle" class="label">Notificaciones</text><text x="835" y="436" text-anchor="middle" class="note">Confirmación interna</text></g>
+<text x="500" y="484" text-anchor="middle" class="note">Contratos internos: Inscripciones → Usuarios, Eventos y Notificaciones; Eventos → Usuarios.</text>
+<text x="500" y="512" text-anchor="middle" class="note">Cada módulo: servicio de aplicación → repositorio propio.</text>
+<path d="M500 536V555" class="line"/>
+<rect x="220" y="560" width="560" height="46" rx="8" fill="#e8eacb"/><text x="500" y="589" text-anchor="middle" class="label">Persistencia + unidad de trabajo (commit / rollback)</text>
+<path d="M500 607V625" class="line"/><rect x="305" y="630" width="390" height="40" rx="17" fill="#154f46"/><text x="500" y="656" text-anchor="middle" style="fill:#fff;font-size:17px;font-weight:700">SQLite · datos persistentes locales</text>
+</svg>

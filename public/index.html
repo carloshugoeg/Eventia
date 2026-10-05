@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="es-GT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#154f46">
+  <meta name="description" content="Descubre eventos en Quetzaltenango, encuentra tu comunidad y reserva tu lugar con Eventia.">
+  <title>Eventia · Encuentra tu próximo plan</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Saltar al contenido</a>
+  <header class="site-header">
+    <div class="shell header-inner">
+      <a class="brand" href="#eventos" aria-label="Eventia, inicio"><img src="/favicon.svg" alt="" width="34" height="34">eventia<span class="brand-dot">.</span></a>
+      <nav aria-label="Navegación principal">
+        <a href="#eventos" data-view="eventos" class="nav-link active">Explorar</a>
+        <a href="#inscripciones" data-view="inscripciones" class="nav-link">Mis inscripciones</a>
+        <a href="#notificaciones" data-view="notificaciones" class="nav-link">Notificaciones <span id="notification-count" class="count" hidden></span></a>
+      </nav>
+      <div id="account-actions" class="account-actions"><button class="button button-outline" data-action="login">Iniciar sesión</button><button class="button button-primary" data-action="register">Crear cuenta <span aria-hidden="true">↗</span></button></div>
+    </div>
+  </header>
+  <main id="main" class="shell" tabindex="-1">
+    <section id="hero" class="hero" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="tiny-dot"></span> HECHO PARA ENCONTRARNOS</p>
+        <h1 id="hero-title">Hay un plan.<br>Hay una <em>conexión.</em></h1>
+        <p class="hero-description">Las mejores historias empiezan saliendo.<br>Descubre lo que pasa en Xela y encuentra tu lugar.</p>
+        <a class="button button-primary hero-cta" href="#catalogo">Encuentra tu próximo plan <span aria-hidden="true">↓</span></a>
+        <p class="hero-note"><span aria-hidden="true">✳</span> Cultura, ideas y comunidad. Cerca de ti.</p>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="poster-top"><span>QUETZALTENANGO, GT</span><span>14° 50′ N</span></div>
+        <svg viewBox="0 0 480 300" class="community-art">
+          <circle cx="242" cy="146" r="116" fill="none" stroke="#91b59d" stroke-width="1"/>
+          <ellipse cx="242" cy="146" rx="184" ry="57" fill="none" stroke="#91b59d" transform="rotate(-25 242 146)"/>
+          <ellipse cx="242" cy="146" rx="175" ry="69" fill="none" stroke="#91b59d" transform="rotate(30 242 146)"/>
+          <g fill="#edecb7"><ellipse cx="242" cy="113" rx="30" ry="62"/><ellipse cx="242" cy="113" rx="30" ry="62" transform="rotate(60 242 146)"/><ellipse cx="242" cy="113" rx="30" ry="62" transform="rotate(120 242 146)"/><ellipse cx="242" cy="113" rx="30" ry="62" transform="rotate(180 242 146)"/><ellipse cx="242" cy="113" rx="30" ry="62" transform="rotate(240 242 146)"/><ellipse cx="242" cy="113" rx="30" ry="62" transform="rotate(300 242 146)"/></g>
+          <circle cx="242" cy="146" r="29" fill="#e59c6d"/><circle cx="93" cy="194" r="16" fill="#e59c6d"/><circle cx="383" cy="72" r="10" fill="#edecb7"/>
+          <path d="M370 229v24m-12-12h24M91 53v18m-9-9h18" stroke="#edecb7" stroke-width="2"/>
+        </svg>
+        <div class="poster-bottom"><span>Las ideas nos mueven.<br>Los encuentros nos unen.</span><span class="poster-stamp">SAL<br>Y VIVE ↗</span></div>
+      </div>
+    </section>
+    <section id="catalogo" class="workspace" aria-labelledby="view-title">
+      <div class="section-heading"><div><p id="view-eyebrow" class="eyebrow">UN BUEN PLAN ESTÁ CERCA</p><h2 id="view-title">Descubre lo que viene</h2></div><p id="results-count" class="results-count" aria-live="polite"></p></div>
+      <div id="discovery-controls">
+        <form id="search-form" class="search-form" role="search"><span aria-hidden="true" class="search-icon">⌕</span><label class="sr-only" for="search">Buscar eventos</label><input id="search" type="search" placeholder="Busca un evento, una idea, un encuentro…" maxlength="120" autocomplete="off"><button class="button button-primary" type="submit">Buscar <span aria-hidden="true">→</span></button></form>
+        <div id="category-filters" class="category-filters" role="group" aria-label="Filtrar por categoría"></div>
+      </div>
+      <div id="content" aria-live="polite"></div>
+      <div id="load-more-wrap" class="load-more-wrap" hidden><button class="button button-outline" data-action="more">Ver más eventos ↓</button></div>
+    </section>
+  </main>
+  <footer class="shell footer"><span class="footer-brand">eventia.</span><p>Un lugar para descubrir. Un motivo para encontrarnos.</p><span>Desde Quetzaltenango <span aria-hidden="true">↗</span></span></footer>
+  <dialog id="modal" aria-labelledby="modal-title"><div id="modal-content"></div></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <noscript><p class="shell">Activa JavaScript para consultar eventos y realizar inscripciones.</p></noscript>
+</body>
+</html>
