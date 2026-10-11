@@ -107,21 +107,21 @@ export function createHttpServer(app, {
       if (eventMatch && method === 'GET') return reply(res, 200, { event: app.events.get(eventMatch[1]) });
       const enrollMatch = url.pathname.match(/^\/api\/events\/([^/]+)\/registrations$/);
       if (enrollMatch && method === 'POST') {
-        await body(req);
-        if (user?.id) {
-          const byUser = registrationLimiter.take(`user:${user.id}`);
-          if (!byUser.ok) {
-            throw tooMany(byUser.retryAfter, 'Hay demasiadas inscripciones desde esta cuenta. Espera un momento.', 'RATE_LIMITED');
-          }
-        }
-        const byIp = registrationLimiter.take(`ip:${req.socket.remoteAddress ?? 'local'}`);
-        if (!byIp.ok) {
-          throw tooMany(byIp.retryAfter, 'Hay demasiadas inscripciones desde esta red. Espera un momento.', 'RATE_LIMITED');
-        }
         if (!admission.tryEnter()) {
           throw tooMany(admissionRetryAfterSeconds, 'La sala de espera está llena. Intenta de nuevo en unos segundos.', 'WAITING_ROOM');
         }
         try {
+          await body(req);
+          if (user?.id) {
+            const byUser = registrationLimiter.take(`user:${user.id}`);
+            if (!byUser.ok) {
+              throw tooMany(byUser.retryAfter, 'Hay demasiadas inscripciones desde esta cuenta. Espera un momento.', 'RATE_LIMITED');
+            }
+          }
+          const byIp = registrationLimiter.take(`ip:${req.socket.remoteAddress ?? 'local'}`);
+          if (!byIp.ok) {
+            throw tooMany(byIp.retryAfter, 'Hay demasiadas inscripciones desde esta red. Espera un momento.', 'RATE_LIMITED');
+          }
           const rawKey = req.headers['idempotency-key'];
           return reply(res, 201, app.registrations.enroll(user, enrollMatch[1], rawKey === undefined ? null : rawKey));
         } finally {

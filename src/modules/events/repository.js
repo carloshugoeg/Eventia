@@ -20,8 +20,8 @@ export function createEventsRepository(db) {
       db.prepare('INSERT INTO events_fts (event_id, title, description) SELECT id, title, description FROM events').run();
     }
     fts = true;
-  } catch {
-    fts = false;
+  } catch (error) {
+    if (!String(error.message).includes('no such module')) throw error;
   }
   const insertEvent = db.prepare(`INSERT INTO events
     (id, organizer_id, title, description, category, location, starts_at, capacity, created_at)

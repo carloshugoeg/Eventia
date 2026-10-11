@@ -35,11 +35,11 @@ La inscripción acepta el encabezado `Idempotency-Key`. La misma clave, la misma
 
 Cada `POST` de inscripción cuenta para un límite por cuenta y otro por IP. El valor de arranque es 20 solicitudes por minuto. Al pasarlo, la API responde 429 con `Retry-After` y código `RATE_LIMITED`.
 
-Hay un tope de inscripciones en curso dentro del proceso. El valor de arranque es 16. Si el tope está lleno, la API responde 429 con código `WAITING_ROOM` y `Retry-After`. No retiene la conexión. En varias instancias ese tope tendría que vivir en un almacén compartido. Aquí es un contador del proceso.
+Hay un contador de inscripciones en curso. Con `ADMISSION_LIMIT=0` cada `POST` de inscripción responde 429, código `WAITING_ROOM`, y encabezado `Retry-After`. Ese caso está probado. Un límite de 1 o más no rechaza todavía una segunda solicitud que llega mientras la primera sigue dentro del manejador. La reserva es síncrona, así que la segunda entra cuando la primera ya soltó el contador. Ese solapamiento queda pendiente.
 
 El catálogo y el detalle usan una caché en memoria. `CATALOG_CACHE_TTL_MS` vale 2000 en el servidor. Publicar o reservar vacía la caché. Los tests arrancan con la caché apagada para que un `UPDATE` directo en SQL no se quede oculto.
 
-La búsqueda crea una tabla FTS5 cuando el motor la incluye. Una consulta de letras y números usa ese índice. Una consulta con símbolos, como `%` o `_`, se queda en `LIKE` para tratar esos caracteres como texto. Si el módulo no está, el arranque captura el error y toda la búsqueda usa `LIKE`. El índice `(category, starts_at)` cubre la fecha y la categoría. En Node 24.21.0 el motor activo es `fts5`. En el Node 22.14.0 de esta máquina el módulo no existe y el motor es `like`. Los 27 tests pasaron en los dos. `/api/health` publica el motor en el campo `search`.
+La búsqueda crea una tabla FTS5 cuando el motor la incluye. Una consulta de letras y números usa ese índice. Una consulta con símbolos, como `%` o `_`, se queda en `LIKE` para tratar esos caracteres como texto. Si el error es `no such module`, el arranque usa `LIKE`. Cualquier otro error de esa tabla detiene el arranque. El índice `(category, starts_at)` cubre la fecha y la categoría. En Node 24.21.0 el motor activo es `fts5`. En el Node 22.14.0 de esta máquina el módulo no existe y el motor es `like`. Los 27 tests pasaron en los dos. `/api/health` publica el motor en el campo `search`.
 
 La sesión pasa por `createSqliteSessionStore` en `src/infrastructure/session-store.js`. El servicio de usuarios llama `put`, `get` y `delete`. La tabla `sessions` sigue siendo la implementación local.
 
@@ -67,7 +67,13 @@ Para llevarlo después, sin cambiar las reglas de cupos:
 - Redis, u otro almacén con expiración, implementa `put`, `get` y `delete` del almacén de sesiones. El hash del token y la caducidad no cambian.
 - El límite de inscripciones y la sala de espera salen del `Map` del proceso y pasan a ese mismo almacén compartido. Si no, cada instancia contaría por su lado.
 - La caché del catálogo puede pasar a un caché compartido. La invalidación al publicar y al reservar se mantiene.
-- El worker puede partirse en dos consumidores de la misma bandeja, uno para notificaciones y otro para reportes, cuando exista una cola. Hoy los distingue el campo `type`.
+- Hoy un solo worker despacha según el campo `type`. Dos procesos distintos tendrían que reclamar tipos distintos. Esa selección no está hecha, porque aquí no hay una segunda cola que probar.
+
+## Pendiente
+
+- Rechazar dos inscripciones simultáneas cuando `ADMISSION_LIMIT` es 1 o mayor. Hoy solo el valor 0 responde 429 de sala de espera.
+- Reclamar la bandeja por `type`, para que un worker de notificaciones y otro de reportes no se quiten eventos.
+- Cola real, correo, push, SMS, CDN, PostgreSQL, Redis y varias instancias. La sección anterior dice dónde enchufarlos.
 
 ## Qué no incluye
 
