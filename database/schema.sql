@@ -45,7 +45,51 @@ CREATE TABLE IF NOT EXISTS notifications (
   created_at TEXT NOT NULL
 ) STRICT;
 
+CREATE TABLE IF NOT EXISTS outbox (
+  id TEXT PRIMARY KEY,
+  type TEXT NOT NULL,
+  payload TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processed', 'dead')),
+  attempts INTEGER NOT NULL DEFAULT 0 CHECK (attempts >= 0),
+  next_attempt_at TEXT NOT NULL,
+  last_error TEXT,
+  created_at TEXT NOT NULL,
+  processed_at TEXT
+) STRICT;
+
+CREATE TABLE IF NOT EXISTS idempotency_keys (
+  user_id TEXT NOT NULL REFERENCES users(id),
+  key TEXT NOT NULL,
+  event_id TEXT NOT NULL,
+  registration_id TEXT NOT NULL REFERENCES registrations(id),
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (user_id, key)
+) STRICT;
+
+CREATE TABLE IF NOT EXISTS report_events (
+  event_id TEXT PRIMARY KEY,
+  organizer_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  capacity INTEGER NOT NULL CHECK (capacity >= 1),
+  registrations INTEGER NOT NULL DEFAULT 0 CHECK (registrations >= 0),
+  updated_at TEXT NOT NULL
+) STRICT;
+
+CREATE TABLE IF NOT EXISTS report_registrations_by_day (
+  event_id TEXT NOT NULL REFERENCES report_events(event_id),
+  day TEXT NOT NULL,
+  registrations INTEGER NOT NULL CHECK (registrations >= 0),
+  PRIMARY KEY (event_id, day)
+) STRICT;
+
+CREATE TABLE IF NOT EXISTS report_applied (
+  outbox_id TEXT PRIMARY KEY
+) STRICT;
+
 CREATE INDEX IF NOT EXISTS idx_events_starts_at ON events(starts_at);
+CREATE INDEX IF NOT EXISTS idx_events_category_starts ON events(category, starts_at);
 CREATE INDEX IF NOT EXISTS idx_registrations_event ON registrations(event_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_sessions_expiry ON sessions(expires_at);
+CREATE INDEX IF NOT EXISTS idx_outbox_due ON outbox(status, next_attempt_at);
+CREATE INDEX IF NOT EXISTS idx_report_events_organizer ON report_events(organizer_id);

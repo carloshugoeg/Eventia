@@ -8,7 +8,7 @@ parentPort.postMessage({ type: 'ready' });
 Atomics.wait(new Int32Array(workerData.gate), 0, 0);
 try {
   const user = app.users.ensureExists(workerData.userId);
-  const result = app.registrations.enroll(user, workerData.eventId);
+  const result = app.registrations.enroll(user, workerData.eventId, workerData.idempotencyKey);
   parentPort.postMessage({ type: 'result', ok: true, id: result.registration.id });
 } catch (error) {
   parentPort.postMessage({ type: 'result', ok: false, code: error.code, message: error.message });

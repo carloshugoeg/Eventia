@@ -13,7 +13,25 @@ async function api(path, options = {}) {
   if (!response.ok) throw Object.assign(new Error(data.error || 'No pudimos completar la solicitud.'), { code:data.code, status:response.status });
   return data;
 }
-const post = (path, data = {}) => api(path, { method:'POST', body:JSON.stringify(data) });
+const post = (path, data = {}, headers = {}) => api(path, { method:'POST', body:JSON.stringify(data), headers });
+const enrollmentKeys = new Map();
+function enrollmentKey(eventId) {
+  const storageKey = `eventia-idem-${eventId}`;
+  try {
+    const saved = sessionStorage.getItem(storageKey);
+    if (saved) return saved;
+    const created = crypto.randomUUID();
+    sessionStorage.setItem(storageKey, created);
+    return created;
+  } catch {
+    if (!enrollmentKeys.has(eventId)) enrollmentKeys.set(eventId, crypto.randomUUID());
+    return enrollmentKeys.get(eventId);
+  }
+}
+function clearEnrollmentKey(eventId) {
+  enrollmentKeys.delete(eventId);
+  try { sessionStorage.removeItem(`eventia-idem-${eventId}`); } catch { /* el modo privado puede bloquear sessionStorage */ }
+}
 
 function toast(message, variant = 'success') {
   clearTimeout(toastTimer);
@@ -49,6 +67,8 @@ function renderAccount() {
   $('#account-actions').innerHTML = user
     ? `${user.role === 'organizer' ? '<button class="button button-primary" data-action="publish">Publicar evento +</button>' : ''}<span class="account-name">${escape(user.name.split(' ')[0])}</span><button class="button button-subtle" data-action="logout">Salir</button>`
     : '<button class="button button-outline" data-action="login">Iniciar sesión</button><button class="button button-primary" data-action="register">Crear cuenta ↗</button>';
+  const reportsLink = $('#reports-link');
+  if (reportsLink) reportsLink.hidden = user?.role !== 'organizer';
   const unread = state.notifications.filter(item => !item.read_at).length;
   $('#notification-count').textContent = unread; $('#notification-count').hidden = !unread;
 }
@@ -72,7 +92,12 @@ async function renderView(append = false) {
   });
   $('#hero').hidden = view !== 'eventos'; $('#discovery-controls').hidden = view !== 'eventos'; $('#load-more-wrap').hidden = true;
   $('#results-count').textContent = '';
-  const headings = { eventos:['UN BUEN PLAN ESTÁ CERCA', 'Descubre lo que viene'], inscripciones:['LOS PLANES QUE YA SON TUYOS', 'Mis inscripciones'], notificaciones:['NO TE PIERDAS NADA', 'Tus notificaciones'] };
+  const headings = {
+    eventos:['UN BUEN PLAN ESTÁ CERCA', 'Descubre lo que viene'],
+    inscripciones:['LOS PLANES QUE YA SON TUYOS', 'Mis inscripciones'],
+    notificaciones:['NO TE PIERDAS NADA', 'Tus notificaciones'],
+    reportes:['LO QUE YA PASÓ EN TUS EVENTOS', 'Reportes']
+  };
   $('#view-eyebrow').textContent = headings[view][0]; $('#view-title').textContent = headings[view][1];
   if (!append) $('#content').innerHTML = '<div class="event-grid" aria-label="Cargando"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>';
   try {
@@ -94,8 +119,15 @@ async function renderView(append = false) {
       if (view === 'inscripciones') {
         $('#results-count').textContent = `${state.registrations.length} ${state.registrations.length === 1 ? 'inscripción' : 'inscripciones'}`;
         $('#content').innerHTML = state.registrations.length ? `<div class="event-grid">${state.registrations.map(item => card(item.event, item)).join('')}</div>` : empty('Tu primera historia empieza aquí', 'Explora los eventos y reserva tu lugar en el que más te guste.', '<a class="button button-primary" href="#eventos">Explorar eventos ↗</a>');
+      } else if (view === 'notificaciones') {
+        $('#content').innerHTML = state.notifications.length ? `<div class="notification-list">${state.notifications.map(item => `<article class="notification-item ${item.read_at ? '' : 'unread'}"><div><h3>${escape(item.message)}</h3><p>${escape(date(item.created_at))} · ${escape(time(item.created_at))}${item.read_at ? ' · Leída' : ' · Nueva'}</p></div>${item.read_at ? '' : `<button class="button button-outline" data-action="read" data-id="${escape(item.id)}">Marcar como leída ✓</button>`}</article>`).join('')}</div>` : empty('Todo al día', 'Las confirmaciones aparecen aquí unos segundos después de inscribirte.');
+      } else if (state.user.role !== 'organizer') {
+        $('#content').innerHTML = empty('Los reportes son para organizadores', 'Entra con una cuenta de organizador para ver inscripciones y ocupación.');
       } else {
-        $('#content').innerHTML = state.notifications.length ? `<div class="notification-list">${state.notifications.map(item => `<article class="notification-item ${item.read_at ? '' : 'unread'}"><div><h3>${escape(item.message)}</h3><p>${escape(date(item.created_at))} · ${escape(time(item.created_at))}${item.read_at ? ' · Leída' : ' · Nueva'}</p></div>${item.read_at ? '' : `<button class="button button-outline" data-action="read" data-id="${escape(item.id)}">Marcar como leída ✓</button>`}</article>`).join('')}</div>` : empty('Todo al día', 'Las confirmaciones de tus inscripciones aparecerán aquí.');
+        const report = await api('/reports');
+        if (request !== state.request) return;
+        $('#results-count').textContent = `${report.events.length} ${report.events.length === 1 ? 'evento' : 'eventos'}`;
+        $('#content').innerHTML = report.events.length ? `<div class="report-wrap"><table class="report-table"><thead><tr><th scope="col">Evento</th><th scope="col">Inscripciones</th><th scope="col">Ocupación</th><th scope="col">Por día</th></tr></thead><tbody>${report.events.map(item => `<tr><td>${escape(item.title)}</td><td>${item.registrations}</td><td>${item.occupancy_pct}%</td><td>${item.timeline.length ? item.timeline.map(point => `${escape(point.day)} · ${point.registrations}`).join('<br>') : 'Sin inscripciones todavía'}</td></tr>`).join('')}</tbody></table></div><p class="report-note">Estas cifras se actualizan cuando el worker procesa la bandeja. Pueden ir unos segundos detrás de la inscripción.</p>` : empty('Todavía no hay cifras', 'Publica un evento y espera a que el worker procese la bandeja.');
       }
     }
   } catch (error) {
@@ -155,11 +187,13 @@ document.addEventListener('click', async event => {
       if (!state.user) { state.pendingEvent = id; return authModal(); }
       return await busy(button, async () => {
         try {
-          await post(`/events/${id}/registrations`);
+          await post(`/events/${id}/registrations`, {}, { 'Idempotency-Key': enrollmentKey(id) });
+          clearEnrollmentKey(id);
           await refreshPersonal(); renderAccount();
           await renderView(); await detailModal(id);
-          toast('¡Tu lugar está confirmado! Te enviamos una notificación en Eventia.');
+          toast('¡Tu lugar está confirmado!');
         } catch (error) {
+          if (error.code === 'ALREADY_REGISTERED') clearEnrollmentKey(id);
           if (['EVENT_FULL', 'ALREADY_REGISTERED', 'EVENT_CLOSED'].includes(error.code)) {
             await refreshPersonal(); renderAccount(); await renderView(); await detailModal(id);
           }
@@ -208,7 +242,7 @@ let searchTimer;
 $('#search').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => { state.query = $('#search').value.trim(); renderView(); }, 350); });
 function changeView() {
   const value = location.hash.slice(1);
-  if (!['eventos','inscripciones','notificaciones'].includes(value)) return;
+  if (!['eventos','inscripciones','notificaciones','reportes'].includes(value)) return;
   state.view = value; renderView();
 }
 window.addEventListener('hashchange', changeView);
@@ -216,5 +250,9 @@ try {
   const { user } = await api('/auth/me'); state.user = user; await refreshPersonal();
 } catch (error) { toast(error.message, 'error'); }
 renderAccount();
-state.view = ['eventos','inscripciones','notificaciones'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'eventos';
+state.view = ['eventos','inscripciones','notificaciones','reportes'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'eventos';
 await renderView();
+setInterval(() => {
+  if (document.hidden || !state.user) return;
+  if (state.view === 'notificaciones' || state.view === 'reportes') renderView();
+}, 4000);

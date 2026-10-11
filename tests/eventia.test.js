@@ -24,11 +24,16 @@ async function fixture(t, path = ':memory:') {
   return { db, app, organizer, participant, event };
 }
 const code = expected => error => error.code === expected;
+function deliver(app) {
+  let guard = 0;
+  while (app.processOutbox() && guard < 30) guard += 1;
+}
 
 test('flujo completo: consultar, inscribirse, actualizar cupo y recibir confirmación persistida', async t => {
   const { app, participant, event } = await fixture(t);
   assert.equal(app.events.get(event.id).available, 2);
   const result = app.registrations.enroll(participant, event.id);
+  deliver(app);
   assert.equal(result.event.available, 1);
   assert.equal(result.event.occupied, 1);
   assert.equal(app.registrations.list(participant)[0].event.id, event.id);
@@ -42,6 +47,7 @@ test('flujo completo: consultar, inscribirse, actualizar cupo y recibir confirma
 test('una inscripción duplicada no ocupa otra plaza ni crea otra notificación', async t => {
   const { app, db, participant, event } = await fixture(t);
   app.registrations.enroll(participant, event.id);
+  deliver(app);
   assert.throws(() => app.registrations.enroll(participant, event.id), code('ALREADY_REGISTERED'));
   assert.equal(app.events.get(event.id).occupied, 1);
   assert.equal(db.prepare('SELECT COUNT(*) AS n FROM registrations').get().n, 1);
@@ -129,6 +135,7 @@ test('las inscripciones y notificaciones son privadas por usuario', async t => {
   const { app, participant, event } = await fixture(t);
   const other = await app.users.register(account());
   app.registrations.enroll(participant, event.id);
+  deliver(app);
   assert.equal(app.registrations.list(other).length, 0);
   assert.equal(app.notifications.list(other).length, 0);
   const notification = app.notifications.list(participant)[0];
@@ -159,6 +166,7 @@ test('HTTP: cookies, autenticación, publicación, flujo completo y cierre de se
   assert.equal((await send('/api/events', eventData(), cookie)).status, 403);
   assert.equal((await send(`/api/events/${event.id}/registrations`, {}, cookie, 'POST', { Origin:'https://untrusted.example' })).status, 403);
   const enrolled = await send(`/api/events/${event.id}/registrations`, {}, cookie); assert.equal(enrolled.status, 201);
+  deliver(app);
   const result = await enrolled.json(); assert.equal(result.event.available, 1);
   assert.equal((await send(`/api/events/${event.id}/registrations`, {}, cookie)).status, 409);
   assert.equal((await (await fetch(base+'/api/registrations', { headers:{ Cookie:cookie } })).json()).registrations.length, 1);
@@ -211,6 +219,7 @@ test('8 conexiones concurrentes compiten por 3 cupos: solo 3 inscripciones y 3 c
   assert.equal(results.filter(item => item.code === 'EVENT_FULL').length, 5);
   assert.equal(app.events.get(event.id).occupied, 3);
   assert.equal(db.prepare('SELECT COUNT(*) AS n FROM registrations').get().n, 3);
+  deliver(app);
   assert.equal(db.prepare('SELECT COUNT(*) AS n FROM notifications').get().n, 3);
   await Promise.all(tasks.map(task => task.worker.terminate()));
   db.close(); db = openDatabase(path);
