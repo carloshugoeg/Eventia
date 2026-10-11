@@ -30,7 +30,7 @@ function enrollmentKey(eventId) {
 }
 function clearEnrollmentKey(eventId) {
   enrollmentKeys.delete(eventId);
-  try { sessionStorage.removeItem(`eventia-idem-${eventId}`); } catch { /* el modo privado puede bloquear sessionStorage */ }
+  try { sessionStorage.removeItem(`eventia-idem-${eventId}`); } catch {}
 }
 
 function toast(message, variant = 'success') {
