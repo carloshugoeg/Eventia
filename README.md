@@ -11,9 +11,10 @@ Desde esta carpeta, en PowerShell:
 ```powershell
 npm.cmd run seed
 npm.cmd start
+npm.cmd run worker
 ```
 
-Abre **http://localhost:3000**. En otras terminales se puede usar `npm` en lugar de `npm.cmd`.
+Abre **http://localhost:3000**. `seed` y `start` dejan el núcleo en marcha. El tercer comando, en otra terminal, procesa la bandeja de salida. Sin ese proceso la inscripción se guarda, pero la notificación y el reporte llegan cuando el worker está activo. En otras terminales se puede usar `npm` en lugar de `npm.cmd`.
 
 El servidor crea `data/eventia.sqlite` automáticamente. Los datos sobreviven al reinicio. `seed` agrega los datos de demostración sin borrar registros existentes; conviene ejecutarlo antes de iniciar el servidor. Para trabajar sin datos de ejemplo, ejecuta solo `npm.cmd start`.
 
@@ -32,6 +33,10 @@ Todas usan la contraseña **`Eventia2026!`**, exclusivamente para esta demostrac
 Las cuentas de demostración solo se crean mediante `seed`. También puedes crear tus propias cuentas desde la interfaz. El tipo de cuenta se elige al registrarse; el MVP permite que cualquier persona sea organizadora.
 
 Se incluyen seis eventos con fechas futuras relativas al momento de ejecutar `seed`. Uno se llama **«Laboratorio de ideas: última plaza»** y tiene capacidad de una persona. Volver a ejecutar `seed` no cambia las fechas ni reinicia los cupos de eventos existentes.
+
+## Fase 2 en este repositorio
+
+La fase 2 está implementada en esta rama, a la escala que se puede demostrar en local. El núcleo sigue siendo un monolito modular. Notificaciones y reportes salen de la transacción de cupos por una bandeja de salida. La guía de correspondencia con conservar, modificar, separar y escalar está en [docs/fase-2-implementacion.md](docs/fase-2-implementacion.md).
 
 ## Entregables de la actividad
 

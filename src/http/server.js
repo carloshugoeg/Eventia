@@ -1,6 +1,7 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { AppError } from '../shared/errors.js';
+import { createAdmission, createRateLimiter } from '../infrastructure/admission.js';
 
 const assets = new Map([
   ['/', ['index.html', 'text/html; charset=utf-8']],
@@ -36,9 +37,19 @@ function sessionToken(req) {
   return (req.headers.cookie ?? '').split(';').map(part => part.trim()).find(part => part.startsWith('eventia_session='))?.slice(16);
 }
 
-export function createHttpServer(app, { secureCookie = false, allowedOrigins = [] } = {}) {
+export function createHttpServer(app, {
+  secureCookie = false,
+  allowedOrigins = [],
+  registrationRateLimit = 20,
+  registrationRateWindowMs = 60000,
+  admissionLimit = 16,
+  admissionRetryAfterSeconds = 2
+} = {}) {
   const cookie = (token, age = 604800) => `eventia_session=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${age}${secureCookie ? '; Secure' : ''}`;
   const attempts = new Map();
+  const registrationLimiter = createRateLimiter({ limit: registrationRateLimit, windowMs: registrationRateWindowMs });
+  const admission = createAdmission(admissionLimit);
+  const tooMany = (decision, message, code) => new AppError(429, message, code, { 'Retry-After': String(decision) });
   return createServer({ requestTimeout: 15000, headersTimeout: 10000 }, async (req, res) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'same-origin');
@@ -53,7 +64,10 @@ export function createHttpServer(app, { secureCookie = false, allowedOrigins = [
         res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'no-cache' });
         return res.end(content);
       }
-      if (url.pathname === '/api/health' && method === 'GET') return reply(res, 200, { status: 'ok' });
+      if (url.pathname === '/api/health' && method === 'GET') {
+        const health = app.health();
+        return reply(res, health.status === 'ok' ? 200 : 503, health);
+      }
       if (['POST', 'PATCH', 'DELETE'].includes(method)) {
         const origin = req.headers.origin;
         const port = res.socket.localPort;
@@ -93,10 +107,29 @@ export function createHttpServer(app, { secureCookie = false, allowedOrigins = [
       if (eventMatch && method === 'GET') return reply(res, 200, { event: app.events.get(eventMatch[1]) });
       const enrollMatch = url.pathname.match(/^\/api\/events\/([^/]+)\/registrations$/);
       if (enrollMatch && method === 'POST') {
-        await body(req);
-        return reply(res, 201, app.registrations.enroll(user, enrollMatch[1]));
+        if (!admission.tryEnter()) {
+          throw tooMany(admissionRetryAfterSeconds, 'La sala de espera está llena. Intenta de nuevo en unos segundos.', 'WAITING_ROOM');
+        }
+        try {
+          await body(req);
+          if (user?.id) {
+            const byUser = registrationLimiter.take(`user:${user.id}`);
+            if (!byUser.ok) {
+              throw tooMany(byUser.retryAfter, 'Hay demasiadas inscripciones desde esta cuenta. Espera un momento.', 'RATE_LIMITED');
+            }
+          }
+          const byIp = registrationLimiter.take(`ip:${req.socket.remoteAddress ?? 'local'}`);
+          if (!byIp.ok) {
+            throw tooMany(byIp.retryAfter, 'Hay demasiadas inscripciones desde esta red. Espera un momento.', 'RATE_LIMITED');
+          }
+          const rawKey = req.headers['idempotency-key'];
+          return reply(res, 201, app.registrations.enroll(user, enrollMatch[1], rawKey === undefined ? null : rawKey));
+        } finally {
+          admission.leave();
+        }
       }
       if (url.pathname === '/api/registrations' && method === 'GET') return reply(res, 200, { registrations: app.registrations.list(user) });
+      if (url.pathname === '/api/reports' && method === 'GET') return reply(res, 200, { events: app.reports.list(user) });
       if (url.pathname === '/api/notifications' && method === 'GET') return reply(res, 200, { notifications: app.notifications.list(user) });
       const readMatch = url.pathname.match(/^\/api\/notifications\/([^/]+)\/read$/);
       if (readMatch && method === 'PATCH') {
@@ -106,7 +139,7 @@ export function createHttpServer(app, { secureCookie = false, allowedOrigins = [
       }
       throw new AppError(404, 'Ruta no encontrada.', 'NOT_FOUND');
     } catch (error) {
-      if (error instanceof AppError) return reply(res, error.status, { error: error.message, code: error.code });
+      if (error instanceof AppError) return reply(res, error.status, { error: error.message, code: error.code }, error.headers);
       if (error.message?.includes('database is locked')) return reply(res, 503, { error: 'El sistema está ocupado. Intenta nuevamente.', code: 'BUSY' });
       console.error('Error interno:', error);
       reply(res, 500, { error: 'No pudimos completar la operación.', code: 'INTERNAL_ERROR' });

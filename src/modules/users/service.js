@@ -18,7 +18,7 @@ async function verifyPassword(password, hash) {
   return timingSafeEqual(key, Buffer.from(expected, 'hex'));
 }
 
-export function createUsersService(repository) {
+export function createUsersService(repository, sessions) {
   return {
     async register(input) {
       const name = text(input.name, 'Nombre', 2, 80);
@@ -56,13 +56,13 @@ export function createUsersService(repository) {
     },
     startSession(user) {
       const token = randomBytes(32).toString('hex');
-      repository.createSession(digest(token), user.id, new Date(Date.now() + 7 * 86400000).toISOString());
+      sessions.put(digest(token), user.id, new Date(Date.now() + 7 * 86400000).toISOString());
       return token;
     },
     authenticate(token) {
-      return /^[a-f0-9]{64}$/.test(token ?? '') ? repository.session(digest(token)) ?? null : null;
+      return /^[a-f0-9]{64}$/.test(token ?? '') ? sessions.get(digest(token)) ?? null : null;
     },
-    logout(token) { if (token) repository.deleteSession(digest(token)); },
+    logout(token) { if (token) sessions.delete(digest(token)); },
     ensureExists(id) {
       return requireUser(repository.byId(id));
     }
