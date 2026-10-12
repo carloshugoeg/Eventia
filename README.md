@@ -40,6 +40,8 @@ Se incluyen seis eventos con fechas futuras relativas al momento de ejecutar `se
 - [Guía de demostración y criterios de aceptación](docs/demostracion.md).
 - [API y estructura del código](docs/api.md).
 - [Resultados de verificación](docs/verificacion.md).
+- [Auditoría de seguridad (fase 2)](docs/auditoria-seguridad-fase-2.md).
+- [Controles de seguridad implementados (fase 3)](docs/fase-3-controles-seguridad.md).
 - [Informe para entregar](output/pdf/Eventia_Fase_1.pdf).
 - Aplicación ejecutable en `src/` y `public/`; esquema SQL en `database/schema.sql`.
 
@@ -50,7 +52,7 @@ npm.cmd run check
 npm.cmd test
 ```
 
-Los tests trabajan con bases aisladas y no modifican los datos de demostración. Incluyen el flujo completo, sobrecupo, duplicados, permisos, privacidad, persistencia y rollback. Una prueba abre **ocho conexiones independientes**, las libera simultáneamente y comprueba que solo **tres** consiguen las **tres plazas** disponibles.
+Los tests trabajan con bases aisladas y no modifican los datos de demostración. Incluyen el flujo completo, sobrecupo, duplicados, permisos, privacidad, edición solo por el organizador dueño, cantidad de inscripción inválida, persistencia y rollback. Una prueba abre **ocho conexiones independientes**, las libera simultáneamente y comprueba que solo **tres** consiguen las **tres plazas** disponibles.
 
 ## Estructura
 

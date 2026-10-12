@@ -14,12 +14,13 @@ La interfaz y API comparten origen. Las respuestas son JSON. Los cuerpos de acci
 | GET | `/api/events?q=&category=&offset=0` | Público | Próximos eventos y total; páginas de 24. |
 | GET | `/api/events/:id` | Público | Detalle y disponibilidad actual. |
 | POST | `/api/events` | Organizador | Publica evento (201). |
+| PATCH | `/api/events/:id` | Organizador dueño | Actualiza su evento (200); ajeno → 403. |
 | POST | `/api/events/:id/registrations` | Autenticado | Reserva plaza, inscripción y confirmación (201). |
 | GET | `/api/registrations` | Autenticado | Inscripciones propias con detalle del evento. |
 | GET | `/api/notifications` | Autenticado | Confirmaciones propias. |
 | PATCH | `/api/notifications/:id/read` | Titular | Marca notificación como leída. |
 
-Todas las acciones sin campos envían `{}`. No hay rutas de edición, eliminación o cancelación en esta fase.
+Las acciones sin campos envían `{}`. La inscripción admite `quantity` (entero ≥ 1; en esta versión solo `1`, o se omite y vale 1). `GET /api/registrations?userId=` ajeno se rechaza con 403. No hay eliminación ni cancelación.
 
 ## Cuerpos principales
 
@@ -49,7 +50,15 @@ Publicación:
 }
 ```
 
-La fecha debe ser futura. El ejemplo equivale a las 16:00 en Guatemala. Las categorías admitidas son Tecnología, Arte y cultura, Comunidad, Bienestar y Música. El campo capacity es un número entero de 1 a 10,000.
+La fecha debe ser futura. El ejemplo equivale a las 16:00 en Guatemala. Las categorías admitidas son Tecnología, Arte y cultura, Comunidad, Bienestar y Música. El campo capacity es un número entero de 1 a 10,000. La misma forma de cuerpo se usa en `PATCH /api/events/:id`; el cupo no puede ser menor que las inscripciones ya confirmadas.
+
+Inscripción (opcional):
+
+```json
+{
+  "quantity": 1
+}
+```
 
 ## Errores
 
@@ -57,9 +66,9 @@ Formato: `{ "error": "Mensaje legible", "code": "CODIGO" }`.
 
 | Estado | Casos |
 |---|---|
-| 400 | Validación, JSON incorrecto o categoría inválida. |
+| 400 | Validación, JSON incorrecto, categoría inválida o `quantity` inválida. |
 | 401 | Sesión ausente, vencida o credenciales incorrectas. |
-| 403 | Rol insuficiente o solicitud desde un origen no permitido. |
+| 403 | Rol insuficiente, evento ajeno, inscripciones de otro usuario u origen no permitido. |
 | 404 | Ruta, evento o notificación inexistente/no perteneciente al titular. |
 | 409 | Correo existente, inscripción duplicada, evento lleno o ya iniciado. |
 | 413 / 415 | Cuerpo demasiado grande / tipo de contenido no admitido. |
@@ -72,7 +81,7 @@ Formato: `{ "error": "Mensaje legible", "code": "CODIGO" }`.
 Los servicios de módulos se exponen como objetos desde `createApplication(db)` en `src/app.js`. Las dependencias son explícitas, sin HTTP entre módulos:
 
 - Usuarios: `register`, `login`, `startSession`, `authenticate`, `logout`, `ensureExists`.
-- Eventos: `list`, `get`, `publish`, `reservePlace`.
+- Eventos: `list`, `get`, `publish`, `update`, `reservePlace`.
 - Inscripciones: `enroll`, `list`.
 - Notificaciones: `confirmRegistration`, `list`, `markRead`.
 

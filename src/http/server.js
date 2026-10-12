@@ -91,12 +91,18 @@ export function createHttpServer(app, { secureCookie = false, allowedOrigins = [
       }
       const eventMatch = url.pathname.match(/^\/api\/events\/([^/]+)$/);
       if (eventMatch && method === 'GET') return reply(res, 200, { event: app.events.get(eventMatch[1]) });
+      if (eventMatch && method === 'PATCH') {
+        return reply(res, 200, { event: app.events.update(user, eventMatch[1], await body(req)) });
+      }
       const enrollMatch = url.pathname.match(/^\/api\/events\/([^/]+)\/registrations$/);
       if (enrollMatch && method === 'POST') {
-        await body(req);
-        return reply(res, 201, app.registrations.enroll(user, enrollMatch[1]));
+        return reply(res, 201, app.registrations.enroll(user, enrollMatch[1], await body(req)));
       }
-      if (url.pathname === '/api/registrations' && method === 'GET') return reply(res, 200, { registrations: app.registrations.list(user) });
+      if (url.pathname === '/api/registrations' && method === 'GET') {
+        return reply(res, 200, {
+          registrations: app.registrations.list(user, { requestedUserId: url.searchParams.get('userId') })
+        });
+      }
       if (url.pathname === '/api/notifications' && method === 'GET') return reply(res, 200, { notifications: app.notifications.list(user) });
       const readMatch = url.pathname.match(/^\/api\/notifications\/([^/]+)\/read$/);
       if (readMatch && method === 'PATCH') {

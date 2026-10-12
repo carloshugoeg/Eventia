@@ -113,16 +113,22 @@ function authModal(register = false) {
   showModal(register ? 'Encuentra tu lugar' : 'Qué bueno verte', `<p class="modal-intro">${register ? 'Crea tu cuenta y empieza a conectar con lo que pasa cerca de ti.' : 'Tus próximos planes están a un paso.'}</p><form id="auth-form" class="form-stack" data-mode="${register ? 'register' : 'login'}">${register ? '<label class="field">Tu nombre<input name="name" autocomplete="name" required minlength="2" maxlength="80" placeholder="¿Cómo te llamas?"></label>' : ''}<label class="field">Correo electrónico<input type="email" name="email" autocomplete="email" required maxlength="254" placeholder="tu@correo.com"></label><label class="field">Contraseña<input name="password" type="password" autocomplete="${register ? 'new-password' : 'current-password'}" required ${register ? 'minlength="8"' : ''} maxlength="128" placeholder="${register ? 'Al menos 8 caracteres' : 'Tu contraseña'}"></label>${register ? '<label class="field">Quiero usar Eventia para<select name="role"><option value="participant">Descubrir eventos e inscribirme</option><option value="organizer">Publicar eventos y participar</option></select></label>' : ''}<p class="form-error" id="form-error" role="alert" hidden></p><button class="button button-primary" type="submit">${register ? 'Crear mi cuenta ↗' : 'Iniciar sesión ↗'}</button></form><p class="form-switch">${register ? '¿Ya tienes cuenta?' : '¿Tu primera vez aquí?'} <button data-action="${register ? 'login' : 'register'}">${register ? 'Inicia sesión' : 'Crea una cuenta'}</button></p>`);
 }
 
+function guatemalaInputValue(iso) {
+  return new Date(new Date(iso).getTime() - 6 * 3600000).toISOString().slice(0, 16);
+}
+
 async function detailModal(id) {
   const { event } = await api(`/events/${encodeURIComponent(id)}`);
   const illustration = art(event.category);
   const enrolled = state.registrations.some(item => item.event_id === id);
   const closed = new Date(event.starts_at) <= new Date();
-  showModal(event.title, `<div class="card-art detail-art ${illustration.style}">${illustration.svg}</div><dl class="detail-facts"><div><dt>CUÁNDO</dt><dd>${escape(date(event.starts_at))}<br>${escape(time(event.starts_at))} · Hora de Guatemala</dd></div><div><dt>DÓNDE</dt><dd>${escape(event.location)}</dd></div><div><dt>ORGANIZA</dt><dd>${escape(event.organizer_name)}</dd></div><div><dt>CATEGORÍA</dt><dd>${escape(event.category)}</dd></div></dl><p class="detail-description">${escape(event.description)}</p><div class="capacity-row"><span>${event.available} ${event.available === 1 ? 'lugar disponible' : 'lugares disponibles'}</span><span>${event.occupied} / ${event.capacity} inscritos</span></div><div class="capacity-track"><progress value="${event.occupied}" max="${event.capacity}" aria-label="Cupos ocupados"></progress></div><button class="button button-primary detail-button" data-action="enroll" data-id="${escape(event.id)}" ${enrolled || closed || !event.available ? 'disabled' : ''}>${enrolled ? '✓ Tu inscripción está confirmada' : closed ? 'Inscripciones cerradas' : !event.available ? 'Cupos agotados' : state.user ? 'Reservar mi lugar ↗' : 'Inicia sesión para inscribirte ↗'}</button><p class="detail-note">${enrolled ? 'Puedes consultar tu confirmación en Mis inscripciones.' : 'Un lugar por persona. La disponibilidad se confirma al inscribirte.'}</p>`, event.category.toUpperCase());
+  const owner = state.user?.role === 'organizer' && state.user.id === event.organizer_id;
+  showModal(event.title, `<div class="card-art detail-art ${illustration.style}">${illustration.svg}</div><dl class="detail-facts"><div><dt>CUÁNDO</dt><dd>${escape(date(event.starts_at))}<br>${escape(time(event.starts_at))} · Hora de Guatemala</dd></div><div><dt>DÓNDE</dt><dd>${escape(event.location)}</dd></div><div><dt>ORGANIZA</dt><dd>${escape(event.organizer_name)}</dd></div><div><dt>CATEGORÍA</dt><dd>${escape(event.category)}</dd></div></dl><p class="detail-description">${escape(event.description)}</p><div class="capacity-row"><span>${event.available} ${event.available === 1 ? 'lugar disponible' : 'lugares disponibles'}</span><span>${event.occupied} / ${event.capacity} inscritos</span></div><div class="capacity-track"><progress value="${event.occupied}" max="${event.capacity}" aria-label="Cupos ocupados"></progress></div><button class="button button-primary detail-button" data-action="enroll" data-id="${escape(event.id)}" ${enrolled || closed || !event.available ? 'disabled' : ''}>${enrolled ? '✓ Tu inscripción está confirmada' : closed ? 'Inscripciones cerradas' : !event.available ? 'Cupos agotados' : state.user ? 'Reservar mi lugar ↗' : 'Inicia sesión para inscribirte ↗'}</button>${owner ? `<button class="button button-outline detail-button" data-action="edit" data-id="${escape(event.id)}">Editar mi evento</button>` : ''}<p class="detail-note">${enrolled ? 'Puedes consultar tu confirmación en Mis inscripciones.' : 'Un lugar por persona. La disponibilidad se confirma al inscribirte.'}</p>`, event.category.toUpperCase());
 }
 
-function publishModal() {
-  showModal('Dale vida a un encuentro', `<p class="modal-intro">Comparte tu propuesta con la comunidad. Todos los eventos del MVP son gratuitos.</p><form id="publish-form" class="form-stack"><label class="field">Nombre del evento<input name="title" required minlength="4" maxlength="100" placeholder="Un nombre que invite a salir"></label><label class="field">Cuéntanos de qué se trata<textarea name="description" required minlength="20" maxlength="2000" placeholder="Qué haremos, para quién es y qué debemos llevar…"></textarea></label><label class="field">Lugar<input name="location" required minlength="3" maxlength="160" placeholder="Nombre del espacio y dirección"></label><div class="form-row"><label class="field">Fecha y hora<input name="starts_at" type="datetime-local" required><span class="field-hint">Hora de Guatemala (UTC-6)</span></label><label class="field">Cupos disponibles<input name="capacity" type="number" required min="1" max="10000" step="1" placeholder="30"></label></div><label class="field">Categoría<select name="category">${categories.map(category => `<option>${escape(category)}</option>`).join('')}</select></label><p class="form-error" id="form-error" role="alert" hidden></p><button class="button button-primary" type="submit">Publicar evento ↗</button></form>`);
+function publishModal(event = null) {
+  const editing = Boolean(event);
+  showModal(editing ? 'Actualiza tu encuentro' : 'Dale vida a un encuentro', `<p class="modal-intro">${editing ? 'Solo tú, como organizador de este evento, puedes guardar estos cambios.' : 'Comparte tu propuesta con la comunidad. Todos los eventos del MVP son gratuitos.'}</p><form id="${editing ? 'edit-form' : 'publish-form'}" class="form-stack" ${editing ? `data-id="${escape(event.id)}"` : ''}><label class="field">Nombre del evento<input name="title" required minlength="4" maxlength="100" placeholder="Un nombre que invite a salir" value="${editing ? escape(event.title) : ''}"></label><label class="field">Cuéntanos de qué se trata<textarea name="description" required minlength="20" maxlength="2000" placeholder="Qué haremos, para quién es y qué debemos llevar…">${editing ? escape(event.description) : ''}</textarea></label><label class="field">Lugar<input name="location" required minlength="3" maxlength="160" placeholder="Nombre del espacio y dirección" value="${editing ? escape(event.location) : ''}"></label><div class="form-row"><label class="field">Fecha y hora<input name="starts_at" type="datetime-local" required value="${editing ? escape(guatemalaInputValue(event.starts_at)) : ''}"><span class="field-hint">Hora de Guatemala (UTC-6)</span></label><label class="field">Cupos disponibles<input name="capacity" type="number" required min="${editing ? Math.max(1, event.occupied) : 1}" max="10000" step="1" placeholder="30" value="${editing ? event.capacity : ''}"></label></div><label class="field">Categoría<select name="category">${categories.map(category => `<option ${editing && event.category === category ? 'selected' : ''}>${escape(category)}</option>`).join('')}</select></label><p class="form-error" id="form-error" role="alert" hidden></p><button class="button button-primary" type="submit">${editing ? 'Guardar cambios ↗' : 'Publicar evento ↗'}</button></form>`);
   const local = new Date(Date.now() + 3600000 - 6 * 3600000).toISOString().slice(0,16);
   $('[name="starts_at"]').min = local;
 }
@@ -143,6 +149,10 @@ document.addEventListener('click', async event => {
     if (action === 'login' || action === 'register') return authModal(action === 'register');
     if (action === 'close') { $('#modal').close(); state.pendingEvent = null; return; }
     if (action === 'publish') return publishModal();
+    if (action === 'edit') return await busy(button, async () => {
+      const { event } = await api(`/events/${encodeURIComponent(button.dataset.id)}`);
+      publishModal(event);
+    });
     if (action === 'filter') { state.category = button.dataset.category; return renderView(); }
     if (action === 'clear') { state.query = ''; state.category = ''; $('#search').value = ''; return renderView(); }
     if (action === 'retry') return renderView();
@@ -172,7 +182,7 @@ document.addEventListener('click', async event => {
 
 document.addEventListener('submit', async event => {
   const form = event.target;
-  if (!['search-form','auth-form','publish-form'].includes(form.id)) return;
+  if (!['search-form','auth-form','publish-form','edit-form'].includes(form.id)) return;
   event.preventDefault();
   if (form.id === 'search-form') { state.query = $('#search').value.trim(); return renderView(); }
   const data = Object.fromEntries(new FormData(form));
@@ -189,11 +199,16 @@ document.addEventListener('submit', async event => {
         data.capacity = Number(data.capacity);
         // El formulario declara explícitamente la zona horaria de Guatemala.
         data.starts_at = new Date(`${data.starts_at}:00-06:00`).toISOString();
-        const { event: published } = await post('/events', data);
-        $('#modal').close(); state.query = ''; state.category = ''; $('#search').value = '';
-        state.view = 'eventos';
-        if (location.hash !== '#eventos') location.hash = '#eventos';
-        await renderView(); await detailModal(published.id); toast('Tu evento ya está publicado. ¡Que empiece el encuentro!');
+        if (form.id === 'edit-form') {
+          const { event: updated } = await api(`/events/${encodeURIComponent(form.dataset.id)}`, { method:'PATCH', body:JSON.stringify(data) });
+          $('#modal').close(); await renderView(); await detailModal(updated.id); toast('Cambios guardados. Tu evento quedó actualizado.');
+        } else {
+          const { event: published } = await post('/events', data);
+          $('#modal').close(); state.query = ''; state.category = ''; $('#search').value = '';
+          state.view = 'eventos';
+          if (location.hash !== '#eventos') location.hash = '#eventos';
+          await renderView(); await detailModal(published.id); toast('Tu evento ya está publicado. ¡Que empiece el encuentro!');
+        }
       }
     } catch (error) {
       const output = $('#form-error');

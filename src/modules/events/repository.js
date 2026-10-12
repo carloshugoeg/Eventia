@@ -19,6 +19,12 @@ export function createEventsRepository(db) {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(event.id, event.organizer_id, event.title,
         event.description, event.category, event.location, event.starts_at, event.capacity, event.created_at);
     },
+    update(event) {
+      db.prepare(`UPDATE events SET title = ?, description = ?, category = ?, location = ?,
+        starts_at = ?, capacity = ? WHERE id = ? AND organizer_id = ?`)
+        .run(event.title, event.description, event.category, event.location,
+          event.starts_at, event.capacity, event.id, event.organizer_id);
+    },
     reserve: (id) => db.prepare(`UPDATE events SET occupied = occupied + 1
       WHERE id = ? AND occupied < capacity AND starts_at > ?`).run(id, new Date().toISOString()).changes
   };

@@ -169,6 +169,87 @@ test('HTTP: cookies, autenticación, publicación, flujo completo y cierre de se
   assert.equal((await (await fetch(base+'/api/auth/me', { headers:{ Cookie:cookie } })).json()).user, null);
 });
 
+test('fase 3: solo el organizador dueño puede modificar su evento', async t => {
+  const { app, organizer, participant, event } = await fixture(t);
+  const other = await app.users.register(account('organizer'));
+  const patch = { ...eventData(), title: 'Título actualizado del encuentro' };
+  assert.throws(() => app.events.update(null, event.id, patch), code('UNAUTHENTICATED'));
+  assert.throws(() => app.events.update(participant, event.id, patch), code('FORBIDDEN'));
+  assert.throws(() => app.events.update(other, event.id, patch), code('FORBIDDEN'));
+  const updated = app.events.update(organizer, event.id, patch);
+  assert.equal(updated.title, 'Título actualizado del encuentro');
+  assert.equal(updated.organizer_id, organizer.id);
+  app.registrations.enroll(participant, event.id);
+  assert.throws(
+    () => app.events.update(organizer, event.id, { ...patch, capacity: 0 }),
+    error => error.status === 400
+  );
+});
+
+test('fase 3: la cantidad de inscripción debe ser mayor que cero y no se permite sobrecupo', async t => {
+  const { app, participant, event } = await fixture(t);
+  const second = await app.users.register(account());
+  const third = await app.users.register(account());
+  assert.throws(() => app.registrations.enroll(participant, event.id, { quantity: 0 }), code('INVALID_QUANTITY'));
+  assert.throws(() => app.registrations.enroll(participant, event.id, { quantity: -1 }), code('INVALID_QUANTITY'));
+  assert.throws(() => app.registrations.enroll(participant, event.id, { quantity: 2 }), code('INVALID_QUANTITY'));
+  app.registrations.enroll(participant, event.id, { quantity: 1 });
+  app.registrations.enroll(second, event.id);
+  assert.throws(() => app.registrations.enroll(third, event.id), code('EVENT_FULL'));
+  assert.equal(app.events.get(event.id).occupied, 2);
+  assert.equal(app.events.get(event.id).available, 0);
+});
+
+test('fase 3: no se pueden consultar inscripciones privadas de otro usuario', async t => {
+  const { app, participant, event } = await fixture(t);
+  const other = await app.users.register(account());
+  app.registrations.enroll(participant, event.id);
+  assert.equal(app.registrations.list(other).length, 0);
+  assert.throws(
+    () => app.registrations.list(other, { requestedUserId: participant.id }),
+    code('FORBIDDEN')
+  );
+  assert.equal(app.registrations.list(participant, { requestedUserId: participant.id }).length, 1);
+});
+
+test('HTTP fase 3: PATCH ajeno, cantidad inválida y userId ajeno se rechazan', async t => {
+  const { app, organizer, event } = await fixture(t);
+  const server = createHttpServer(app); server.listen(0, '127.0.0.1'); await once(server, 'listening');
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const send = (path, data = {}, cookie = '', method = 'POST') => fetch(base + path, {
+    method, headers: { 'Content-Type': 'application/json', Cookie: cookie }, body: JSON.stringify(data)
+  });
+  const ownerReg = await send('/api/auth/register', account('organizer'));
+  assert.equal(ownerReg.status, 201);
+  const ownerCookie = ownerReg.headers.get('set-cookie').split(';')[0];
+  const created = await send('/api/events', eventData({ title: 'Evento propio para editar' }), ownerCookie);
+  assert.equal(created.status, 201);
+  const owned = await created.json();
+
+  const outsiderReg = await send('/api/auth/register', account());
+  assert.equal(outsiderReg.status, 201);
+  const outsiderCookie = outsiderReg.headers.get('set-cookie').split(';')[0];
+
+  const denied = await send(`/api/events/${owned.event.id}`, eventData({ title: 'Intento no autorizado' }), outsiderCookie, 'PATCH');
+  assert.equal(denied.status, 403);
+  assert.equal((await denied.json()).code, 'FORBIDDEN');
+
+  const allowed = await send(`/api/events/${owned.event.id}`, eventData({ title: 'Evento propio actualizado ok' }), ownerCookie, 'PATCH');
+  assert.equal(allowed.status, 200);
+  assert.equal((await allowed.json()).event.title, 'Evento propio actualizado ok');
+
+  const badQuantity = await send(`/api/events/${event.id}/registrations`, { quantity: 0 }, outsiderCookie);
+  assert.equal(badQuantity.status, 400);
+  assert.equal((await badQuantity.json()).code, 'INVALID_QUANTITY');
+
+  const peek = await fetch(`${base}/api/registrations?userId=${encodeURIComponent(organizer.id)}`, {
+    headers: { Cookie: outsiderCookie }
+  });
+  assert.equal(peek.status, 403);
+  assert.equal((await peek.json()).code, 'FORBIDDEN');
+});
+
 test('HTTP: valida JSON, tamaño del cuerpo y rutas inexistentes', async t => {
   const { app } = await fixture(t);
   const server = createHttpServer(app); server.listen(0, '127.0.0.1'); await once(server, 'listening');

@@ -4,6 +4,7 @@ import { openDatabase } from '../src/infrastructure/database.js';
 import { createApplication } from '../src/app.js';
 
 if (existsSync('.env')) loadEnvFile('.env');
+const demoPassword = process.env.DEMO_PASSWORD ?? 'Eventia2026!';
 const db = openDatabase(process.env.DATABASE_PATH ?? './data/eventia.sqlite');
 const app = createApplication(db);
 const accounts = [
@@ -13,10 +14,10 @@ const accounts = [
 ];
 try {
   for (const account of accounts) {
-    try { await app.users.register({ ...account, password: 'Eventia2026!' }); }
+    try { await app.users.register({ ...account, password: demoPassword }); }
     catch (error) { if (error.code !== 'EMAIL_EXISTS') throw error; }
   }
-  const organizer = await app.users.login({ email: accounts[0].email, password: 'Eventia2026!' });
+  const organizer = await app.users.login({ email: accounts[0].email, password: demoPassword });
   const examples = [
     ['Ideas que se convierten en código', 'Tecnología', 'Centro de innovación · Zona 3', 40, 7,
       'Una tarde para crear, compartir y conectar. Construye tu primera idea web junto a la comunidad tecnológica de Xela. No necesitas experiencia previa.'],
@@ -38,5 +39,5 @@ try {
   }
   console.log('Datos de demostración listos. No se borraron registros existentes.');
   console.log('Cuentas: organizador@eventia.demo, andrea@eventia.demo, diego@eventia.demo');
-  console.log('Contraseña de demostración: Eventia2026!');
+  console.log(`Contraseña de demostración: ${demoPassword}${process.env.DEMO_PASSWORD ? ' (DEMO_PASSWORD)' : ''}`);
 } finally { db.close(); }
