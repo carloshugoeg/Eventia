@@ -1,0 +1,127 @@
+
+> eventia-fase-1@1.0.0 test
+> node --test tests/*.test.js
+
+TAP version 13
+# (node:2261) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: flujo completo: consultar, inscribirse, actualizar cupo y recibir confirmación persistida
+ok 1 - flujo completo: consultar, inscribirse, actualizar cupo y recibir confirmación persistida
+  ---
+  duration_ms: 86.808731
+  ...
+# Subtest: una inscripción duplicada no ocupa otra plaza ni crea otra notificación
+ok 2 - una inscripción duplicada no ocupa otra plaza ni crea otra notificación
+  ---
+  duration_ms: 93.317404
+  ...
+# Subtest: un evento lleno rechaza la siguiente solicitud y mantiene su capacidad
+ok 3 - un evento lleno rechaza la siguiente solicitud y mantiene su capacidad
+  ---
+  duration_ms: 120.29379
+  ...
+# Subtest: si falla la confirmación, se revierten inscripción y cupo
+ok 4 - si falla la confirmación, se revierten inscripción y cupo
+  ---
+  duration_ms: 72.242368
+  ...
+# Subtest: un evento que ya empezó cierra inscripciones y sale del catálogo
+ok 5 - un evento que ya empezó cierra inscripciones y sale del catálogo
+  ---
+  duration_ms: 68.52591
+  ...
+# Subtest: publicar e inscribirse exige autenticación y publicar exige organizador
+ok 6 - publicar e inscribirse exige autenticación y publicar exige organizador
+  ---
+  duration_ms: 69.312904
+  ...
+# Subtest: rechaza capacidad fraccionaria, fechas pasadas y cuentas inválidas
+ok 7 - rechaza capacidad fraccionaria, fechas pasadas y cuentas inválidas
+  ---
+  duration_ms: 69.356588
+  ...
+# Subtest: hash de contraseña, correo normalizado y credenciales incorrectas
+ok 8 - hash de contraseña, correo normalizado y credenciales incorrectas
+  ---
+  duration_ms: 207.45909
+  ...
+# Subtest: sesiones expiran y cerrar sesión invalida el token
+ok 9 - sesiones expiran y cerrar sesión invalida el token
+  ---
+  duration_ms: 69.887289
+  ...
+# Subtest: búsqueda y filtros tratan comodines SQL como texto y rechazan entradas inválidas
+ok 10 - búsqueda y filtros tratan comodines SQL como texto y rechazan entradas inválidas
+  ---
+  duration_ms: 72.157104
+  ...
+# Subtest: las inscripciones y notificaciones son privadas por usuario
+ok 11 - las inscripciones y notificaciones son privadas por usuario
+  ---
+  duration_ms: 105.028337
+  ...
+# Subtest: la base impide sobrecupo, duplicados y relaciones inexistentes
+ok 12 - la base impide sobrecupo, duplicados y relaciones inexistentes
+  ---
+  duration_ms: 67.6354
+  ...
+# Subtest: HTTP: cookies, autenticación, publicación, flujo completo y cierre de sesión
+ok 13 - HTTP: cookies, autenticación, publicación, flujo completo y cierre de sesión
+  ---
+  duration_ms: 168.308813
+  ...
+# Subtest: fase 3: solo el organizador dueño puede modificar su evento
+ok 14 - fase 3: solo el organizador dueño puede modificar su evento
+  ---
+  duration_ms: 104.779044
+  ...
+# Subtest: fase 3: la cantidad de inscripción debe ser mayor que cero y no se permite sobrecupo
+ok 15 - fase 3: la cantidad de inscripción debe ser mayor que cero y no se permite sobrecupo
+  ---
+  duration_ms: 136.56736
+  ...
+# Subtest: fase 3: no se pueden consultar inscripciones privadas de otro usuario
+ok 16 - fase 3: no se pueden consultar inscripciones privadas de otro usuario
+  ---
+  duration_ms: 109.749489
+  ...
+# Subtest: HTTP fase 3: PATCH ajeno, cantidad inválida y userId ajeno se rechazan
+ok 17 - HTTP fase 3: PATCH ajeno, cantidad inválida y userId ajeno se rechazan
+  ---
+  duration_ms: 160.17829
+  ...
+# Subtest: HTTP: valida JSON, tamaño del cuerpo y rutas inexistentes
+ok 18 - HTTP: valida JSON, tamaño del cuerpo y rutas inexistentes
+  ---
+  duration_ms: 75.330287
+  ...
+# (node:2261) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:2261) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:2261) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:2261) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:2261) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:2261) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:2261) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:2261) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: 8 conexiones concurrentes compiten por 3 cupos: solo 3 inscripciones y 3 confirmaciones
+ok 19 - 8 conexiones concurrentes compiten por 3 cupos: solo 3 inscripciones y 3 confirmaciones
+  ---
+  duration_ms: 487.104286
+  ...
+1..19
+# tests 19
+# suites 0
+# pass 19
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2427.10278
