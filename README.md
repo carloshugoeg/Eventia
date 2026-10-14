@@ -42,8 +42,13 @@ Se incluyen seis eventos con fechas futuras relativas al momento de ejecutar `se
 - [Resultados de verificación](docs/verificacion.md).
 - [Auditoría de seguridad (fase 2)](docs/auditoria-seguridad-fase-2.md).
 - [Controles de seguridad implementados (fase 3)](docs/fase-3-controles-seguridad.md).
-- [Informe para entregar](output/pdf/Eventia_Fase_1.pdf).
+- [Actividad 23: auditoría, rediseño, permisos y evidencias](docs/actividad-23-seguridad-apis.md).
+- [OpenAPI Actividad 23 (tres endpoints)](docs/openapi-actividad-23.yaml).
+- [Informe PDF Actividad 23](output/pdf/Eventia_Actividad_23.pdf) (incluye el enlace al repositorio al inicio).
+- [Informe para entregar (Fase 1)](output/pdf/Eventia_Fase_1.pdf).
 - Aplicación ejecutable en `src/` y `public/`; esquema SQL en `database/schema.sql`.
+
+**Repositorio:** https://github.com/carloshugoeg/Eventia
 
 ## Verificación
 
@@ -92,4 +97,4 @@ Cada módulo tiene `service.js` y `repository.js`. Los repositorios conocen SQL;
 
 Opcionalmente copia `.env.example` como `.env` para cambiar puerto y ruta de datos. El programa lo carga automáticamente. No sobrescribas una base existente para repetir la demostración: usa una ruta nueva mediante `DATABASE_PATH`.
 
-El informe PDF se puede regenerar con `python scripts/generate_report.py` si Python dispone de `reportlab`. La aplicación no necesita Python. Las imágenes de evidencia se guardan en `docs/evidencia/`.
+El informe PDF de Fase 1 se regenera con `python scripts/generate_report.py` si Python dispone de `reportlab`. El PDF de la Actividad 23 se regenera con `python scripts/generate_actividad_23_report.py`. La aplicación no necesita Python. Las imágenes y logs de evidencia se guardan en `docs/evidencia/`.

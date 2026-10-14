@@ -1,0 +1,297 @@
+openapi: 3.0.3
+info:
+  title: Eventia API — Endpoints seguros (Actividad 23)
+  description: |
+    Documentación OpenAPI de tres operaciones rediseñadas tras la auditoría.
+    Coincide con permisos, validaciones y controles de autorización definidos en el rediseño.
+  version: 1.0.0
+  contact:
+    name: Eventia
+    url: https://github.com/carloshugoeg/Eventia
+
+servers:
+  - url: http://127.0.0.1:3000
+    description: Servidor local del MVP
+
+tags:
+  - name: Eventos
+  - name: Inscripciones
+  - name: Autenticación
+
+paths:
+  /api/events:
+    post:
+      tags: [Eventos]
+      summary: Publicar un evento
+      description: |
+        Crea un evento público. Solo un organizador autenticado puede publicarlo.
+        El backend valida título, descripción, categoría, lugar, fecha futura y cupo positivo.
+        Se rechazan propiedades no permitidas al no usarlas en el parseo tipado.
+      operationId: publishEvent
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventInput'
+            example:
+              title: Concierto universitario
+              description: Presentación musical abierta a la comunidad universitaria de Xela.
+              category: Música
+              location: Auditorio central
+              starts_at: '2026-12-10T22:00:00.000Z'
+              capacity: 150
+      responses:
+        '201':
+          description: Evento creado
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [event]
+                properties:
+                  event:
+                    $ref: '#/components/schemas/Event'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Usuario autenticado sin rol de organizador
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Debes iniciar sesión como organizador.
+                code: FORBIDDEN
+        '415':
+          description: Content-Type distinto de application/json
+
+  /api/events/{eventId}:
+    patch:
+      tags: [Eventos]
+      summary: Modificar un evento propio
+      description: |
+        Actualiza un evento. Exige sesión de organizador y ownership
+        (`event.organizer_id === user.id`). Un organizador no puede modificar eventos ajenos.
+      operationId: updateOwnEvent
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventInput'
+      responses:
+        '200':
+          description: Evento actualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [event]
+                properties:
+                  event:
+                    $ref: '#/components/schemas/Event'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: No es el organizador dueño del evento
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Solo el organizador de este evento puede modificarlo.
+                code: FORBIDDEN
+        '404':
+          description: Evento no encontrado
+
+  /api/events/{eventId}/registrations:
+    post:
+      tags: [Inscripciones]
+      summary: Inscribirse en un evento
+      description: |
+        Reserva una plaza para el usuario autenticado. Valida `quantity` (solo 1),
+        impide duplicados y actualiza cupos de forma condicional dentro de una transacción
+        para evitar sobrecupo concurrente.
+      operationId: enrollInEvent
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                quantity:
+                  type: integer
+                  minimum: 1
+                  maximum: 1
+                  default: 1
+                  description: En esta versión solo se admite 1 plaza por inscripción.
+            example:
+              quantity: 1
+      responses:
+        '201':
+          description: Inscripción confirmada
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [registration, notification, event]
+                properties:
+                  registration:
+                    $ref: '#/components/schemas/Registration'
+                  notification:
+                    type: object
+                  event:
+                    $ref: '#/components/schemas/Event'
+        '400':
+          description: Cantidad inválida u otros datos incorrectos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: La cantidad de inscripciones debe ser un entero mayor que cero.
+                code: INVALID_QUANTITY
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Evento lleno, cerrado o inscripción duplicada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: eventia_session
+      description: Cookie HttpOnly con token de sesión (hash almacenado en servidor).
+
+  schemas:
+    EventInput:
+      type: object
+      required: [title, description, category, location, starts_at, capacity]
+      additionalProperties: false
+      properties:
+        title:
+          type: string
+          minLength: 4
+          maxLength: 100
+        description:
+          type: string
+          minLength: 20
+          maxLength: 2000
+        category:
+          type: string
+          enum: [Tecnología, Arte y cultura, Comunidad, Bienestar, Música]
+        location:
+          type: string
+          minLength: 3
+          maxLength: 160
+        starts_at:
+          type: string
+          format: date-time
+          description: Debe ser una fecha futura (UTC).
+        capacity:
+          type: integer
+          minimum: 1
+          maximum: 10000
+
+    Event:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        location:
+          type: string
+        starts_at:
+          type: string
+          format: date-time
+        capacity:
+          type: integer
+        occupied:
+          type: integer
+        available:
+          type: integer
+        organizer_id:
+          type: string
+          format: uuid
+        organizer_name:
+          type: string
+
+    Registration:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        event_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      required: [error, code]
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+
+  responses:
+    BadRequest:
+      description: Datos inválidos
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Autenticación ausente o inválida
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Debes iniciar sesión para continuar.
+            code: UNAUTHENTICATED
