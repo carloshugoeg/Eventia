@@ -35,6 +35,17 @@ Se incluyen seis eventos con fechas futuras relativas al momento de ejecutar `se
 
 ## Entregables de la actividad
 
+### Actividad 23 (auditoría y diseño seguro)
+
+Paquete completo en [docs/actividad-23/](docs/actividad-23/README.md): auditoría de las siete APIs, rediseño, matriz de permisos, OpenAPI, evidencias de dos controles, preguntas finales y enlace al repositorio.
+
+```powershell
+node scripts/check-actividad-23.js
+npm.cmd test
+```
+
+### Fases anteriores
+
 - [Propuesta completa de fase 1](docs/fase-1.md): definición del MVP, decisiones, componentes, responsabilidades, relaciones, almacenamiento y comunicaciones.
 - [Diagrama de arquitectura](docs/arquitectura.svg), editable como [Mermaid](docs/arquitectura.mmd).
 - [Guía de demostración y criterios de aceptación](docs/demostracion.md).
@@ -44,6 +55,7 @@ Se incluyen seis eventos con fechas futuras relativas al momento de ejecutar `se
 - [Controles de seguridad implementados (fase 3)](docs/fase-3-controles-seguridad.md).
 - [Informe para entregar](output/pdf/Eventia_Fase_1.pdf).
 - Aplicación ejecutable en `src/` y `public/`; esquema SQL en `database/schema.sql`.
+
 
 ## Verificación
 

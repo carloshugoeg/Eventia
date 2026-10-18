@@ -1,0 +1,303 @@
+openapi: 3.0.3
+info:
+  title: Eventia API (endpoints corregidos)
+  description: >
+    Documentación OpenAPI de tres operaciones alineadas con el rediseño de la
+    Actividad 23 y con la implementación actual de Eventia (sesiones por cookie).
+  version: 1.0.0
+
+servers:
+  - url: http://127.0.0.1:3000
+    description: MVP local
+
+tags:
+  - name: events
+  - name: registrations
+  - name: auth
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: eventia_session
+      description: Token de sesión HttpOnly emitido en login o registro.
+
+  schemas:
+    Error:
+      type: object
+      required: [error, code]
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+          example: FORBIDDEN
+
+    Event:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+          enum: [Tecnología, Arte y cultura, Comunidad, Bienestar, Música]
+        location:
+          type: string
+        starts_at:
+          type: string
+          format: date-time
+        capacity:
+          type: integer
+          minimum: 1
+          maximum: 10000
+        occupied:
+          type: integer
+        available:
+          type: integer
+        organizer_id:
+          type: string
+          format: uuid
+        organizer_name:
+          type: string
+
+    EventWrite:
+      type: object
+      required: [title, description, category, location, starts_at, capacity]
+      additionalProperties: false
+      properties:
+        title:
+          type: string
+          minLength: 4
+          maxLength: 100
+        description:
+          type: string
+          minLength: 20
+          maxLength: 2000
+        category:
+          type: string
+          enum: [Tecnología, Arte y cultura, Comunidad, Bienestar, Música]
+        location:
+          type: string
+          minLength: 3
+          maxLength: 160
+        starts_at:
+          type: string
+          format: date-time
+          description: Debe ser una fecha futura.
+        capacity:
+          type: integer
+          minimum: 1
+          maximum: 10000
+
+    EnrollmentRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 1
+          default: 1
+          description: En esta versión solo se admite 1.
+
+    Registration:
+      type: object
+      properties:
+        id:
+          type: string
+        event_id:
+          type: string
+        user_id:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+paths:
+  /api/events/{id}:
+    patch:
+      tags: [events]
+      summary: Modificar un evento propio
+      description: >
+        Actualiza un evento. Requiere sesión de organizador y que
+        event.organizer_id coincida con el usuario autenticado.
+      operationId: updateOwnEvent
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventWrite'
+            example:
+              title: Concierto universitario
+              description: Presentación de bandas del campus con aforo controlado.
+              category: Música
+              location: Auditorio central
+              starts_at: 2026-12-10T22:00:00.000Z
+              capacity: 150
+      responses:
+        '200':
+          description: Evento actualizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '400':
+          description: Datos inválidos (cupo, fecha, campos).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Autenticación ausente o inválida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Sin rol organizador o evento ajeno.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Solo el organizador de este evento puede modificarlo.
+                code: FORBIDDEN
+        '404':
+          description: Evento inexistente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/events/{id}/registrations:
+    post:
+      tags: [registrations]
+      summary: Inscribirse en un evento
+      description: >
+        Reserva una plaza para el usuario autenticado. Valida quantity,
+        impide sobrecupo con actualización condicional y evita duplicados.
+      operationId: enrollInEvent
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnrollmentRequest'
+            examples:
+              default:
+                value: {}
+              explicit:
+                value:
+                  quantity: 1
+              invalid:
+                summary: Rechazado por el backend
+                value:
+                  quantity: 0
+      responses:
+        '201':
+          description: Inscripción creada.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  registration:
+                    $ref: '#/components/schemas/Registration'
+        '400':
+          description: quantity inválida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: La cantidad de inscripciones debe ser un entero mayor que cero.
+                code: INVALID_QUANTITY
+        '401':
+          description: Sin sesión.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Evento inexistente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Evento lleno, cerrado o inscripción duplicada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/registrations:
+    get:
+      tags: [registrations]
+      summary: Listar inscripciones propias
+      description: >
+        Devuelve solo las inscripciones del usuario autenticado.
+        Si se envía userId de otro usuario, responde 403.
+      operationId: listOwnRegistrations
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: userId
+          in: query
+          required: false
+          description: Solo se acepta si coincide con el usuario de la sesión.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Lista de inscripciones del titular.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  registrations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Registration'
+        '401':
+          description: Sin sesión.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Intento de consultar inscripciones ajenas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: No puedes consultar las inscripciones de otro usuario.
+                code: FORBIDDEN
