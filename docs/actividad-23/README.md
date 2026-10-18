@@ -11,7 +11,7 @@ Paquete de entrega alineado con el enunciado del curso Programación Web (URL / 
 | 3 | Matriz de roles y permisos | [03-matriz-permisos.md](03-matriz-permisos.md) |
 | 4 | OpenAPI de tres endpoints corregidos | [openapi.yaml](openapi.yaml) |
 | 5 | Evidencias de dos controles implementados y probados | [05-evidencias-controles.md](05-evidencias-controles.md) |
-| 6 | Enlace al repositorio | https://github.com/carloshugoeg/Eventia (paquete en la rama `docs/actividad-23-entregables` / [PR #3](https://github.com/carloshugoeg/Eventia/pull/3) hasta merge a `main`) |
+| 6 | Enlace al repositorio | https://github.com/carloshugoeg/Eventia |
 | 7 | Respuestas a las preguntas finales | [06-preguntas-finales.md](06-preguntas-finales.md) |
 
 ## Controles en código
