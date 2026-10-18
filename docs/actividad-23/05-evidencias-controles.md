@@ -8,11 +8,11 @@ Controles tomados de la auditoría y aplicados en el proyecto Eventia. Las prueb
 
 ### 1. Comportamiento anterior
 
-No existía `PATCH`/`PUT` de eventos, o un diseño inseguro habría permitido a cualquier organizador autenticado alterar el evento `25` de otro.
+Antes de la corrección, un `PATCH`/`PUT` de eventos que solo exigía rol organizador permitía a cualquier organizador autenticado alterar el evento de otro (caso API 4 del enunciado).
 
 ### 2. Problema de seguridad identificado
 
-Autorización por rol sin comprobar el dueño del recurso (OWASP API1 / A01 Broken Access Control). Un organizador podía modificar eventos ajenos.
+Autorización por rol sin comprobar el dueño del recurso (OWASP **API1** Broken Object Level Authorization). Un organizador podía modificar eventos ajenos.
 
 ### 3. Modificación realizada
 
@@ -51,7 +51,7 @@ El enunciado permite `cantidad: 500` sin tope y sin reserva concurrente segura, 
 
 ### 2. Problema de seguridad identificado
 
-Consumo ilimitado del flujo de inscripción y condición de carrera en el cupo (OWASP API4 / API6; integridad del cupo).
+Acceso sin límites al flujo de inscripción y condición de carrera en el cupo (OWASP **API6** Unrestricted Access to Sensitive Business Flows; **API4** como riesgo secundario de consumo).
 
 ### 3. Modificación realizada
 

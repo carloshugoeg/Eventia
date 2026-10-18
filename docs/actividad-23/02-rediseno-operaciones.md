@@ -6,21 +6,22 @@ Cada operación redefine método, acceso, datos, validaciones, autorización, re
 
 ## 1. Consulta de inscripción propia
 
-**Endpoint:** `GET /api/inscripciones/{id}` (Eventia: listado propio `GET /api/registrations`; no se expone lectura por id ajeno)
+**Endpoint (caso):** `GET /api/inscripciones/{id}`  
+**Eventia implementado:** `GET /api/registrations` (solo filas del caller). No hay `GET` por id de inscripción ajena. Un organizador consulta inscritos de su evento en una operación distinta (entregable de matriz, operación 7), no en este listado.
 
-**Función.** Devuelve una inscripción solo si el solicitante es el titular o el organizador del evento.
+**Función.** Devuelve las inscripciones del usuario autenticado.
 
-**Quién.** Usuario autenticado (titular) u organizador del evento asociado. Administrador si la política lo permite.
+**Quién.** Usuario registrado autenticado (titular). Administrador solo con política explícita fuera del MVP.
 
-**Datos recibidos.** `id` en la ruta. Sin cuerpo.
+**Datos recibidos.** Sin cuerpo. Query opcional `userId` solo si coincide con la sesión.
 
-**Validaciones.** `id` con formato esperado. Sesión válida.
+**Validaciones.** Sesión válida.
 
-**Autorización.** Tras cargar el recurso, `inscripcion.usuarioId === actor.id` **o** `evento.organizadorId === actor.id` **o** rol administrador. Si falla, `403` o `404` (sin filtrar existencia a terceros si la política es opaca).
+**Autorización.** El listado filtra por `actor.id`. Si `userId` es de otro usuario, `403`.
 
-**Respuesta esperada.** `200` con `{ id, eventoId, usuarioId, creadoEn }` sin campos ajenos innecesarios.
+**Respuesta esperada.** `200` con `{ registrations: [...] }`, cada ítem con el `event` anidado. Sin datos de otros usuarios.
 
-**Errores.** `401` sin autenticación. `403`/`404` sin permiso. `404` si no existe.
+**Errores.** `401` sin autenticación. `403` si se pide `userId` ajeno.
 
 ---
 
@@ -32,11 +33,13 @@ Cada operación redefine método, acceso, datos, validaciones, autorización, re
 
 **Quién.** Visitante (público).
 
-**Datos recibidos.** `nombre`, `correo`, `password`. Opcional en MVP académico: `role` solo `participant` | `organizer`. Nunca `administrador` desde el cliente.
+**Datos recibidos.** `nombre`, `correo`, `password`.
 
-**Validaciones.** Nombre y correo con longitud y formato. Contraseña 8–128 caracteres. Rechazar propiedades desconocidas. Normalizar correo a minúsculas.
+**Validaciones.** Nombre y correo con longitud y formato. Contraseña 8–128 caracteres. Rechazar propiedades desconocidas. Normalizar correo a minúsculas. Ignorar cualquier `rol`/`role`/`administrador` enviado por el cliente.
 
-**Autorización.** Ningún caller anónimo puede fijar roles privilegiados. El servidor asigna el rol.
+**Autorización.** El servidor asigna siempre el rol por defecto (`usuario` / `participant`). Promover a organizador o administrador es una operación de administración (matriz, operación 8), no del registro público.
+
+**Nota sobre Eventia actual.** El MVP aún acepta `role: participant | organizer` en el registro. Eso queda como deuda respecto al rediseño ideal de la API 2. No acepta `administrador`.
 
 **Respuesta esperada.** `201` con perfil público `{ id, nombre, correo, rol }` y cookie de sesión. Sin `passwordHash`.
 

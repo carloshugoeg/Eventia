@@ -69,7 +69,6 @@ components:
     EventWrite:
       type: object
       required: [title, description, category, location, starts_at, capacity]
-      additionalProperties: false
       properties:
         title:
           type: string
@@ -94,17 +93,19 @@ components:
           type: integer
           minimum: 1
           maximum: 10000
+          description: >
+            Entero 1–10000. En actualización no puede ser menor que occupied
+            (código CAPACITY_TOO_LOW).
 
     EnrollmentRequest:
       type: object
-      additionalProperties: false
       properties:
         quantity:
           type: integer
           minimum: 1
           maximum: 1
           default: 1
-          description: En esta versión solo se admite 1.
+          description: En esta versión solo se admite 1. Campos extra se ignoran.
 
     Registration:
       type: object
@@ -118,6 +119,42 @@ components:
         created_at:
           type: string
           format: date-time
+        event:
+          $ref: '#/components/schemas/Event'
+          description: Presente en GET /api/registrations.
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+        user_id:
+          type: string
+        message:
+          type: string
+        read:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    EventEnvelope:
+      type: object
+      required: [event]
+      properties:
+        event:
+          $ref: '#/components/schemas/Event'
+
+    EnrollmentResult:
+      type: object
+      required: [registration, notification, event]
+      properties:
+        registration:
+          $ref: '#/components/schemas/Registration'
+        notification:
+          $ref: '#/components/schemas/Notification'
+        event:
+          $ref: '#/components/schemas/Event'
 
 paths:
   /api/events/{id}:
@@ -152,13 +189,13 @@ paths:
               capacity: 150
       responses:
         '200':
-          description: Evento actualizado.
+          description: Evento actualizado. El handler envuelve el recurso en `event`.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Event'
+                $ref: '#/components/schemas/EventEnvelope'
         '400':
-          description: Datos inválidos (cupo, fecha, campos).
+          description: Datos inválidos (cupo, fecha, campos, CAPACITY_TOO_LOW).
           content:
             application/json:
               schema:
@@ -203,7 +240,10 @@ paths:
             type: string
             format: uuid
       requestBody:
-        required: false
+        required: true
+        description: >
+          Content-Type application/json obligatorio. Enviar al menos `{}`.
+          Sin JSON el servidor responde 415.
         content:
           application/json:
             schema:
@@ -220,14 +260,11 @@ paths:
                   quantity: 0
       responses:
         '201':
-          description: Inscripción creada.
+          description: Inscripción creada con confirmación y evento actualizado.
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  registration:
-                    $ref: '#/components/schemas/Registration'
+                $ref: '#/components/schemas/EnrollmentResult'
         '400':
           description: quantity inválida.
           content:
@@ -251,6 +288,12 @@ paths:
                 $ref: '#/components/schemas/Error'
         '409':
           description: Evento lleno, cerrado o inscripción duplicada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '415':
+          description: Content-Type distinto de application/json.
           content:
             application/json:
               schema:

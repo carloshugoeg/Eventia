@@ -7,10 +7,10 @@ Caso de estudio de la Actividad 23. Las APIs descritas abajo son el diseño inse
 | API | Problema identificado | Riesgo OWASP API | Solución propuesta |
 |---|---|---|---|
 | API 1 | `GET /api/inscripciones/{id}` solo comprueba que la inscripción exista. No verifica que pertenezca al solicitante. | **API1** Broken Object Level Authorization (BOLA / IDOR). Secundario: **API3** si se filtran campos de otras personas. | Exigir autenticación. Autorizar por titular (`usuarioId === usuario autenticado`) o por organizador del evento asociado. Responder `404` o `403` si no hay derecho. No filtrar datos ajenos. |
-| API 2 | `POST /api/usuarios` persiste el `rol` enviado por el cliente. Un atacante se registra como `administrador`. | **API5** Broken Function Level Authorization (elevación de privilegios). También **API3** Broken Object Property Level Authorization (mass assignment). | Lista blanca de campos. Ignorar o forzar `rol` (por defecto `usuario`). Solo un administrador autenticado puede asignar roles privilegiados. Validar correo y política de contraseña. |
-| API 3 | `POST /api/eventos` acepta `cupo` y `precio` negativos. Cualquier usuario autenticado puede crear eventos. | **API5** Broken Function Level Authorization (falta de rol). Validación ausente se alinea con diseño inseguro / abuso de recurso (**API4** si se abusa del cupo). | Autenticación + rol `organizador`. Validar título no vacío, cupo entero `> 0`, precio `≥ 0`. Rechazar propiedades no permitidas. |
+| API 2 | `POST /api/usuarios` persiste el `rol` enviado por el cliente. Un atacante se registra como `administrador`. | **API3** Broken Object Property Level Authorization (mass assignment del campo `rol`). Secundario: efecto de **API5** al ejercer funciones privilegiadas. | Lista blanca de campos. Ignorar el `rol` del cliente y asignar `usuario` por defecto. Solo un administrador autenticado puede promover roles. Validar correo y política de contraseña. |
+| API 3 | `POST /api/eventos` acepta `cupo` y `precio` negativos. Cualquier usuario autenticado puede crear eventos. | **API5** Broken Function Level Authorization (crear eventos sin rol). La validación de cupo/precio es un control obligatorio aparte. | Autenticación + rol `organizador`. Validar título no vacío, cupo entero `> 0`, precio `≥ 0`. Rechazar propiedades no permitidas. |
 | API 4 | `PUT /api/eventos/{id}` exige rol organizador, pero no comprueba ownership. Un organizador edita eventos ajenos. | **API1** Broken Object Level Authorization. | Tras autenticar y comprobar rol, exigir `evento.organizadorId === usuario.id`. Actualización condicionada en persistencia. |
-| API 5 | `POST /api/eventos/{id}/inscripciones` acepta `cantidad: 500` sin tope por usuario. No hay control seguro de cupos bajo concurrencia. | **API4** Unrestricted Resource Consumption. **API6** Unrestricted Access to Sensitive Business Flows (flujo de inscripción). | Límite de cantidad por solicitud y por usuario. Reserva atómica (`UPDATE` condicional o bloqueo de fila). Transacción. Rechazar si no hay cupo. |
+| API 5 | `POST /api/eventos/{id}/inscripciones` acepta `cantidad: 500` sin tope por usuario. No hay control seguro de cupos bajo concurrencia. | **API6** Unrestricted Access to Sensitive Business Flows (flujo de inscripción). Secundario: **API4** si la cantidad desborda recursos. | Límite de cantidad por solicitud y por usuario. Reserva atómica (`UPDATE` condicional o bloqueo de fila). Transacción. Rechazar si no hay cupo. |
 | API 6 | `GET /api/usuarios/{id}` devuelve `passwordHash`, teléfono y rol aunque el front solo use nombre y correo. | **API3** Broken Object Property Level Authorization (exposición excesiva de datos). | DTO público con campos mínimos. Nunca devolver hashes ni secretos. Autorizar quién puede ver el perfil (propio, admin, o vista pública reducida). |
 | API 7 | `POST /api/auth/login` sin límite de intentos. Mensajes distintos para correo inexistente vs contraseña incorrecta. | **API2** Broken Authentication. | Rate limiting por IP y por cuenta. Mensaje genérico único. Comparación en tiempo constante. Bloqueo temporal o CAPTCHA tras umbral. |
 
@@ -25,9 +25,9 @@ Caso de estudio de la Actividad 23. Las APIs descritas abajo son el diseño inse
 
 ### API 2. Registro de usuarios
 
-1. **Qué está mal.** Confianza en el cliente para el campo `rol`.
+1. **Qué está mal.** Confianza en el cliente para el campo `rol` (mass assignment).
 2. **Consecuencias.** Escalada a administrador, bypass de toda la matriz de permisos.
-3. **OWASP.** API5 (principal), API3 (mass assignment).
+3. **OWASP.** API3 (principal). API5 como efecto al usar el rol obtenido.
 4. **Control.** El servidor asigna el rol. Separar registro público de administración de usuarios.
 
 ### API 3. Creación de eventos
@@ -48,7 +48,7 @@ Caso de estudio de la Actividad 23. Las APIs descritas abajo son el diseño inse
 
 1. **Qué está mal.** Sin tope de cantidad y sin reserva concurrente segura.
 2. **Consecuencias.** Acaparamiento de cupos, sobrecupo real, venta o reventa fraudulenta de plazas.
-3. **OWASP.** API4 y API6.
+3. **OWASP.** API6 (principal). API4 como riesgo secundario de consumo.
 4. **Control.** `cantidad` acotada, transacción, actualización condicional del cupo ocupado.
 
 ### API 6. Consulta de usuarios
