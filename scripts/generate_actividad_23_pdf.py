@@ -114,8 +114,10 @@ story.append(Spacer(1, 1.2 * cm))
 p('Eventia: de una API insegura a un diseño seguro', 'CoverTitle')
 p('Actividad 23 · Entrega completa', 'CoverSub')
 story.append(Spacer(1, 0.8 * cm))
-p('Nombre: _________________________________ Carné: _______________', 'CoverMeta')
-story.append(Spacer(1, 1.4 * cm))
+p('Integrantes', 'CoverSub')
+p('ESCOBAR GÓMEZ CARLOS HUGO · Carné est1563824', 'CoverMeta')
+p('GARCÍA COYOY HÉCTOR JORDIN ADOLFO · Carné est2427124', 'CoverMeta')
+story.append(Spacer(1, 1.2 * cm))
 p(
     'Repositorio: <link href="https://github.com/carloshugoeg/Eventia">'
     'https://github.com/carloshugoeg/Eventia</link>',
