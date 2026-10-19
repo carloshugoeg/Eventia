@@ -1,0 +1,16 @@
+GET /api/registrations con la cookie de andrea@eventia.demo tras poner expires_at en el año 2000
+
+HTTP/1.1 401 Unauthorized
+X-Content-Type-Options: nosniff
+Referrer-Policy: same-origin
+X-Frame-Options: DENY
+Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'
+Content-Type: application/json; charset=utf-8
+Cache-Control: no-store
+Date: Mon, 19 Oct 2026 16:42:41 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+Transfer-Encoding: chunked
+
+
+{"error":"Inicia sesión para continuar.","code":"UNAUTHENTICATED"}

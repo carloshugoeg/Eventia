@@ -1,0 +1,17 @@
+POST /api/auth/login como organizador@eventia.demo
+
+HTTP/1.1 200 OK
+X-Content-Type-Options: nosniff
+Referrer-Policy: same-origin
+X-Frame-Options: DENY
+Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'
+Content-Type: application/json; charset=utf-8
+Cache-Control: no-store
+Set-Cookie: eventia_session=f624102e61daacda13cdc77d6fc6199f1c1ee616c943082485cdd6bf2856636b; Path=/; HttpOnly; SameSite=Strict; Max-Age=604800
+Date: Mon, 19 Oct 2026 16:42:41 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+Transfer-Encoding: chunked
+
+
+{"user":{"id":"e8554d32-8eec-4bce-9884-f7c619a160de","name":"Colectivo Xela","email":"organizador@eventia.demo","role":"organizer"}}

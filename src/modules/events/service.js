@@ -50,6 +50,9 @@ export function createEventsService(repository, users) {
       if (current.organizer_id !== user.id) {
         throw new AppError(403, 'Solo el organizador de este evento puede modificarlo.', 'FORBIDDEN');
       }
+      if (current.starts_at <= new Date().toISOString()) {
+        throw new AppError(409, 'Este evento ya inició y no admite cambios.', 'EVENT_CLOSED');
+      }
       const fields = parseEventFields(input, { occupied: current.occupied });
       repository.update({ id, organizer_id: user.id, ...fields });
       return service.get(id);

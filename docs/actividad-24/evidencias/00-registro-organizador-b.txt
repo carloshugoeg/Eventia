@@ -1,0 +1,17 @@
+POST /api/auth/register como Organizador B
+
+HTTP/1.1 201 Created
+X-Content-Type-Options: nosniff
+Referrer-Policy: same-origin
+X-Frame-Options: DENY
+Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'
+Content-Type: application/json; charset=utf-8
+Cache-Control: no-store
+Set-Cookie: eventia_session=e6b57ac88a79a1cf701f5758c2129ab55cdc196550a424076efbb2ba82617780; Path=/; HttpOnly; SameSite=Strict; Max-Age=604800
+Date: Mon, 19 Oct 2026 16:42:41 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+Transfer-Encoding: chunked
+
+
+{"user":{"id":"fd07157c-6e1b-496a-abab-a5a6206a29b1","name":"Organizador B","email":"orgb@eventia.demo","role":"organizer"}}

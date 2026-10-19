@@ -11,6 +11,8 @@
     "seed": "node scripts/seed.js",
     "test": "node --test tests/*.test.js",
     "check": "node scripts/check.js",
-    "check:actividad-23": "node scripts/check-actividad-23.js"
+    "check:actividad-23": "node scripts/check-actividad-23.js",
+    "evidencias:actividad-24": "bash docs/actividad-24/evidencias/capturar.sh",
+    "check:actividad-24": "node scripts/check-actividad-24.js"
   }
 }

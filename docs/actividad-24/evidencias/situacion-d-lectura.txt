@@ -1,0 +1,16 @@
+GET /api/events/18382035-4b91-48d0-af35-30cf26682720 después del PATCH rechazado del dueño
+
+HTTP/1.1 200 OK
+X-Content-Type-Options: nosniff
+Referrer-Policy: same-origin
+X-Frame-Options: DENY
+Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'
+Content-Type: application/json; charset=utf-8
+Cache-Control: no-store
+Date: Mon, 19 Oct 2026 16:42:41 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+Transfer-Encoding: chunked
+
+
+{"event":{"id":"18382035-4b91-48d0-af35-30cf26682720","organizer_id":"e8554d32-8eec-4bce-9884-f7c619a160de","title":"Evento editado por su dueño","description":"Descripción suficientemente larga para validar el cambio.","category":"Tecnología","location":"Zona 3 Xela","starts_at":"2020-01-01T00:00:00.000Z","capacity":40,"occupied":0,"created_at":"2026-10-19T16:42:40.848Z","available":40,"organizer_name":"Colectivo Xela"}}
