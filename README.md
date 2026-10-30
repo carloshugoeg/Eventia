@@ -105,3 +105,55 @@ Cada módulo tiene `service.js` y `repository.js`. Los repositorios conocen SQL;
 Opcionalmente copia `.env.example` como `.env` para cambiar puerto y ruta de datos. El programa lo carga automáticamente. No sobrescribas una base existente para repetir la demostración: usa una ruta nueva mediante `DATABASE_PATH`.
 
 El informe PDF se puede regenerar con `python scripts/generate_report.py` si Python dispone de `reportlab`. La aplicación no necesita Python. Las imágenes de evidencia se guardan en `docs/evidencia/`.
+
+## Despliegue y Docker
+
+La imagen usa `node:24-slim`, escucha en `0.0.0.0`, respeta `$PORT` (por defecto `3000`) y guarda SQLite en `DATABASE_PATH=/app/data/eventia.sqlite`, declarado como volumen (`VOLUME /app/data`).
+
+### Docker
+
+```bash
+docker build -t eventia:local .
+docker volume create eventia-data
+docker run -d --name eventia -p 3000:3000 \
+  -e APP_ORIGIN=http://localhost:3000 \
+  -e DEMO_PASSWORD='Eventia2026!' \
+  -v eventia-data:/app/data eventia:local
+curl http://localhost:3000/api/health
+# Datos de demostración (opcional):
+docker exec eventia npm run seed
+```
+
+Prueba de persistencia:
+
+```bash
+docker rm -f eventia
+docker run -d --name eventia -p 3000:3000 -v eventia-data:/app/data eventia:local
+curl http://localhost:3000/api/events   # los datos creados siguen ahí
+```
+
+### Docker Compose
+
+```bash
+docker compose up -d --build
+docker compose exec eventia npm run seed
+docker compose logs -f eventia
+docker compose down          # conserva el volumen eventia-data
+docker compose down -v       # elimina también los datos
+```
+
+### Railway
+
+1. En Railway: **New Project → Deploy from GitHub repo** y elegir `Eventia`. `railway.json` indica el builder `DOCKERFILE`.
+2. En el servicio: **Settings → Volumes → Add Volume** con mount path `/data`.
+3. En **Variables** definir:
+   - `DATABASE_PATH=/data/eventia.sqlite`
+   - `COOKIE_SECURE=true`
+   - `APP_ORIGIN=https://<tu-dominio>.up.railway.app`
+   - `DEMO_PASSWORD=<una clave segura>`
+   - (`PORT` lo inyecta Railway; `HOST=0.0.0.0` ya viene en la imagen.)
+4. **Settings → Networking → Generate Domain** para obtener la URL HTTPS y usarla en `APP_ORIGIN`.
+5. Desplegar y verificar `https://<tu-dominio>.up.railway.app/api/health`.
+6. Opcional: cargar datos con `railway ssh` → `npm run seed`.
+
+Diagrama: `docs/actividad-27/arquitectura-despliegue.svg`.

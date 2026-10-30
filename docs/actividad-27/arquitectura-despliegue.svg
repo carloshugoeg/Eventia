@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="300" viewBox="0 0 980 300" font-family="Arial, sans-serif">
+  <defs><marker id="a" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#333"/></marker></defs>
+  <rect width="980" height="300" fill="#fff"/>
+  <text x="490" y="30" text-anchor="middle" font-size="20" font-weight="bold">Eventia: arquitectura de despliegue</text>
+  <rect x="20" y="110" width="150" height="70" rx="10" fill="#e3f2fd" stroke="#1565c0"/>
+  <text x="95" y="142" text-anchor="middle" font-size="16">Usuario</text>
+  <text x="95" y="162" text-anchor="middle" font-size="12">(navegador)</text>
+  <line x1="170" y1="145" x2="280" y2="145" stroke="#333" stroke-width="2" marker-end="url(#a)"/>
+  <text x="225" y="135" text-anchor="middle" font-size="13" font-weight="bold">HTTPS</text>
+  <rect x="285" y="60" width="440" height="190" rx="12" fill="#f3e5f5" stroke="#6a1b9a"/>
+  <text x="505" y="85" text-anchor="middle" font-size="15" font-weight="bold">Plataforma (Railway / Docker host)</text>
+  <rect x="320" y="105" width="370" height="120" rx="10" fill="#e8f5e9" stroke="#2e7d32"/>
+  <text x="505" y="135" text-anchor="middle" font-size="15" font-weight="bold">Contenedor Node 24 (node:24-slim)</text>
+  <text x="505" y="160" text-anchor="middle" font-size="12">node:http · HOST=0.0.0.0 · PORT=$PORT</text>
+  <text x="505" y="180" text-anchor="middle" font-size="12">API /api/* + estáticos public/</text>
+  <text x="505" y="200" text-anchor="middle" font-size="12">node:sqlite → DATABASE_PATH</text>
+  <line x1="690" y1="165" x2="790" y2="165" stroke="#333" stroke-width="2" marker-end="url(#a)"/>
+  <text x="740" y="155" text-anchor="middle" font-size="12">lectura/escritura</text>
+  <rect x="795" y="110" width="165" height="110" rx="10" fill="#fff8e1" stroke="#ef6c00"/>
+  <text x="877" y="140" text-anchor="middle" font-size="15" font-weight="bold">Volumen</text>
+  <text x="877" y="162" text-anchor="middle" font-size="12">/data (Railway)</text>
+  <text x="877" y="180" text-anchor="middle" font-size="12">/app/data (Docker)</text>
+  <text x="877" y="202" text-anchor="middle" font-size="12">eventia.sqlite</text>
+  <text x="490" y="285" text-anchor="middle" font-size="12" fill="#555">Los datos sobreviven a reinicios y redespliegues porque SQLite vive en el volumen, no en el contenedor.</text>
+</svg>

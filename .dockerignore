@@ -1,0 +1,15 @@
+node_modules
+data
+*.sqlite
+*.sqlite-*
+.git
+.github
+docs
+output
+tests
+*.pdf
+*.md
+.env
+.env.*
+Dockerfile
+docker-compose.yml
